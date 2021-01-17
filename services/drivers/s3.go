@@ -147,11 +147,16 @@ func (so *S3) flush() error {
 }
 
 func (so *S3) Close() error {
+	defer fmt.Println(`closed`)
 	so.mu.Lock()
-	if err := so.w.Close(); err != nil {
-		return err
+	if so.CurrentSize > 0 {
+		if err := so.w.Close(); err != nil {
+			return err
+		}
+		so.wg.Wait()
+	} else {
+		return nil
 	}
-	so.wg.Wait()
-	fmt.Println(`closed`)
+
 	return nil
 }
