@@ -14,18 +14,14 @@ func NewWriter(d io.WriteCloser) *Writer {
 	return &Writer{driver: d}
 }
 
-var SEPERATOR = []byte("\n")
+var SEPERATOR = byte('\n')
 
 func (w *Writer) Write(e entities.Event) error {
 	b, err := jsoniter.ConfigFastest.Marshal(e)
 	if err != nil {
 		return err
 	}
-	_, err = w.driver.Write(b)
-	if err != nil {
-		return nil
-	}
-	_, err = w.driver.Write(SEPERATOR)
+	_, err = w.driver.Write(append(b, SEPERATOR))
 	return err
 
 }
