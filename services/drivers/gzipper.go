@@ -1,10 +1,12 @@
 package drivers
 
 import (
+	"bytes"
 	"compress/gzip"
 	"io"
 	"os"
 	"strconv"
+	"sync"
 )
 
 type gzipper struct {
@@ -23,15 +25,22 @@ func (g *gzipper) Close() error {
 	return g.origWriter.Close()
 }
 
+var (
+	lvl, _   = strconv.Atoi(os.Getenv(`GZIP_LVL`))
+	gzipPool = &sync.Pool{New: func() interface{} {
+		if lvl == 0 {
+			panic(`gzip lvl is not set or 0`)
+		}
+		gw, _ := gzip.NewWriterLevel(bytes.NewBuffer(nil), lvl)
+
+		return gw
+	}}
+)
+
 func newGzipper(w io.WriteCloser) (io.WriteCloser, error) {
-	lvl, err := strconv.Atoi(os.Getenv(`GZIP_LVL`))
-	if err != nil {
-		panic(`GZIP_LVL is empty`)
-	}
-	gw, err := gzip.NewWriterLevel(w, lvl)
-	if err != nil {
-		return nil, err
-	}
+	gw := gzipPool.Get().(*gzip.Writer)
+	defer gzipPool.Put(gw)
+	gw.Reset(w)
 	return &gzipper{
 		origWriter: w,
 		w:          gw,

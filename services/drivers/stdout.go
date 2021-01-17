@@ -8,7 +8,7 @@ type StdOut struct {
 }
 
 func (so *StdOut) Write(e []byte) (int, error) {
-	fmt.Println(string(e))
+	fmt.Print(string(e))
 	return len(e), nil
 }
 

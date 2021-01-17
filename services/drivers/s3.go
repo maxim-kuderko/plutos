@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"io"
-	"math/rand"
 	"os"
 	"strconv"
 	"sync"
@@ -16,23 +15,23 @@ import (
 )
 
 type S3 struct {
-	CurrentSize []int
-	lastFlushed []time.Time
-	uploader    *s3manager.Uploader
-	w           []io.WriteCloser
+	CurrentSize   int
+	maxFileSizeMB int
+	lastFlushed   time.Time
+	uploader      *s3manager.Uploader
+	w             io.WriteCloser
 
-	mu []sync.Mutex
+	mu sync.Mutex
 	wg sync.WaitGroup
 }
 
 var (
-	region                = os.Getenv(`S3_REGION`)
-	dataPrefix            = os.Getenv(`S3_PREFIX`)
-	bucket                = os.Getenv(`S3_BUCKET`)
-	isCompressed          = os.Getenv(`S3_IS_COMPRESSED`) == `true`
-	writingConnections, _ = strconv.Atoi(os.Getenv(`S3_WRITING_CONNECTIONS`))
-	maxTime, _            = strconv.Atoi(os.Getenv(`S3_MAX_BUFFER_TIME_SECONDS`))
-	maxFileSize, _        = strconv.Atoi(os.Getenv(`S3_MAX_FILE_SIZE`))
+	region         = os.Getenv(`S3_REGION`)
+	dataPrefix     = os.Getenv(`S3_PREFIX`)
+	bucket         = os.Getenv(`S3_BUCKET`)
+	isCompressed   = os.Getenv(`S3_IS_COMPRESSED`) == `true`
+	maxTime, _     = strconv.Atoi(os.Getenv(`S3_MAX_BUFFER_TIME_SECONDS`))
+	maxFileSize, _ = strconv.Atoi(os.Getenv(`S3_MAX_FILE_SIZE`))
 )
 
 func NewS3() io.WriteCloser {
@@ -43,25 +42,16 @@ func NewS3() io.WriteCloser {
 		//Credentials: credentials.NewStaticCredentials(key, secret, ""),
 	}))
 	s := &S3{
-		CurrentSize: make([]int, writingConnections),
-
-		uploader: s3manager.NewUploader(svc),
-		mu:       make([]sync.Mutex, writingConnections),
+		uploader:      s3manager.NewUploader(svc),
+		mu:            sync.Mutex{},
+		lastFlushed:   time.Now(),
+		maxFileSizeMB: maxFileSize * 1024 * 1024,
 	}
-	t := time.Now()
-	lastFlushed := make([]time.Time, 0, writingConnections)
-	writers := make([]io.WriteCloser, 0, writingConnections)
-	for i := 0; i < writingConnections; i++ {
-		lastFlushed = append(lastFlushed, t)
-		w, err := s.newUploader()
-		if err != nil {
-			panic(err)
-		}
-		writers = append(writers, w)
+	var err error
+	s.w, err = s.newUploader()
+	if err != nil {
+		panic(err)
 	}
-
-	s.lastFlushed = lastFlushed
-	s.w = writers
 	go s.periodicFlush()
 
 	return s
@@ -78,10 +68,6 @@ func validateInitialSettings() {
 
 	if dataPrefix == `` {
 		panic(`S3_PREFIX is empty`)
-	}
-
-	if writingConnections == 0 {
-		panic(`S3_WRITING_CONNECTIONS is empty`)
 	}
 
 	if maxTime == 0 {
@@ -105,18 +91,15 @@ func (so *S3) periodicFlush() {
 	ticker := time.NewTicker(time.Second)
 	maxTimeBetweenFlushes := time.Duration(maxTime) * time.Second
 	for range ticker.C {
-		for i := 0; i < writingConnections; i++ {
-			so.mu[i].Lock()
-			if time.Since(so.lastFlushed[i]) > maxTimeBetweenFlushes && so.CurrentSize[i] > 0 {
-				if err := so.flush(i); err != nil {
-					log.Err(err)
-				}
+		so.mu.Lock()
+		if time.Since(so.lastFlushed) > maxTimeBetweenFlushes && so.CurrentSize > 0 {
+			if err := so.flush(); err != nil {
+				log.Err(err)
 			}
-			so.mu[i].Unlock()
-
 		}
-	}
+		so.mu.Unlock()
 
+	}
 }
 
 func (so *S3) upload(r *io.PipeReader) {
@@ -139,39 +122,41 @@ func (so *S3) upload(r *io.PipeReader) {
 }
 
 func (so *S3) Write(e []byte) (int, error) {
-	r := rand.Int() % writingConnections
-	so.mu[r].Lock()
-	defer so.mu[r].Unlock()
+	so.mu.Lock()
+	defer so.mu.Unlock()
 	defer func() {
-		so.CurrentSize[r] += len(e)
-		if so.CurrentSize[r] > maxFileSize*1024*1024 {
-			if err := so.flush(r); err != nil {
+		so.CurrentSize += len(e)
+		if so.CurrentSize > so.maxFileSizeMB {
+			if err := so.flush(); err != nil {
 				log.Err(err)
 			}
 		}
 	}()
-	return so.w[r].Write(e)
+	return so.w.Write(e)
 }
 
 // not go routine safe
-func (so *S3) flush(r int) error {
-	tmp := so.w[r]
+func (so *S3) flush() error {
+	tmp := so.w
 	go tmp.Close()
 	var err error
-	so.w[r], err = so.newUploader()
-	so.CurrentSize[r] = 0
-	so.lastFlushed[r] = time.Now()
+	so.w, err = so.newUploader()
+	so.CurrentSize = 0
+	so.lastFlushed = time.Now()
 	return err
 }
 
 func (so *S3) Close() error {
-	for i := 0; i < writingConnections; i++ {
-		so.mu[i].Lock()
-		if err := so.w[i].Close(); err != nil {
+	defer fmt.Println(`closed`)
+	so.mu.Lock()
+	if so.CurrentSize > 0 {
+		if err := so.w.Close(); err != nil {
 			return err
 		}
+		so.wg.Wait()
+	} else {
+		return nil
 	}
-	so.wg.Wait()
-	fmt.Println(`closed`)
+
 	return nil
 }
