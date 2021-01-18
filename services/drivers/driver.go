@@ -4,5 +4,5 @@ import "io"
 
 type Driver interface {
 	io.WriteCloser
-	Flush()
+	Flush() error
 }

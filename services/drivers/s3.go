@@ -64,9 +64,6 @@ func (so *S3) newUploader() (io.WriteCloser, error) {
 	r, w := io.Pipe()
 	so.wg.Add(1)
 	go so.upload(r)
-	if isCompressed {
-		return newGzipper(w)
-	}
 	return w, nil
 }
 
@@ -75,7 +72,7 @@ func (so *S3) upload(r *io.PipeReader) {
 	t := time.Now()
 	uid, err := uuid.NewUUID()
 	if err != nil {
-		log.Err(err)
+		log.Error().Stack().Err(err).Msg("")
 		return
 	}
 	_, err = so.uploader.Upload(&s3manager.UploadInput{
@@ -84,7 +81,7 @@ func (so *S3) upload(r *io.PipeReader) {
 		Key:    aws.String(fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s`, dataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uid.String())),
 	})
 	if err != nil {
-		log.Err(err)
+		log.Error().Stack().Err(err).Msg("")
 	}
 
 }
@@ -95,17 +92,15 @@ func (so *S3) Write(e []byte) (int, error) {
 }
 
 // not go routine safe
-func (so *S3) Flush() {
+func (so *S3) Flush() error {
 	tmp := so.w
 	go tmp.Close()
 	var err error
 	so.w, err = so.newUploader()
-	log.Err(err)
-	return
+	return err
 }
 
 func (so *S3) Close() error {
-	defer fmt.Println(`closed`)
 	if err := so.w.Close(); err != nil {
 		return err
 	}

@@ -2,7 +2,6 @@ package drivers
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -60,7 +59,7 @@ func (so *Sqs) Write(e []byte) (int, error) {
 	return so.buff.Write(e)
 }
 
-func (so *Sqs) Flush() {
+func (so *Sqs) Flush() error {
 	tmp := so.buff
 	so.buff = so.pool.Get().(*bytes.Buffer)
 	so.wg.Add(1)
@@ -78,17 +77,15 @@ func (so *Sqs) Flush() {
 				MessageGroupId:         aws.String(``),
 				QueueUrl:               aws.String(endpoint),
 			})
-			log.Err(err)
+			log.Error().Stack().Err(err).Msg("")
 		}
 
 	}()
-	return
+	return nil
 }
 
 func (so *Sqs) Close() error {
-	so.mu.Lock()
 	so.Flush()
 	so.wg.Wait()
-	fmt.Println(`closed`)
 	return nil
 }
