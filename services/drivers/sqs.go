@@ -8,18 +8,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	"io"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 type Sqs struct {
-	client      *sqs.SQS
-	currentSize int
-	lastFlushed time.Time
+	client *sqs.SQS
 
 	buff *bytes.Buffer
 
@@ -33,7 +29,7 @@ var (
 	bufferSize, _ = strconv.Atoi(os.Getenv(`SQS_BUFFER`))
 )
 
-func NewSqs() io.WriteCloser {
+func NewSqs() Driver {
 	validateInitialSettingsSQS()
 	svc := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
@@ -46,7 +42,6 @@ func NewSqs() io.WriteCloser {
 		},
 	}}
 	s.buff = s.pool.Get().(*bytes.Buffer)
-	go s.periodicFlush()
 	return s
 }
 func validateInitialSettingsSQS() {
@@ -60,34 +55,12 @@ func validateInitialSettingsSQS() {
 		panic(`sqs buffer too large`)
 	}
 }
-func (so *Sqs) periodicFlush() {
-	ticker := time.NewTicker(time.Second)
-	maxTimeBetweenFlushes := time.Duration(maxTime) * time.Second
-	for range ticker.C {
-		so.mu.Lock()
-		if time.Since(so.lastFlushed) > maxTimeBetweenFlushes && so.currentSize > 0 {
-			if err := so.flush(); err != nil {
-				log.Err(err)
-			}
-		}
-		so.mu.Unlock()
 
-	}
-}
 func (so *Sqs) Write(e []byte) (int, error) {
-	so.mu.Lock()
-	defer so.mu.Unlock()
-	if len(e)+so.currentSize > bufferSize && so.currentSize > 0 {
-		so.flush()
-	}
-	so.buff.Write(e)
-	so.currentSize += len(e)
-	return len(e), nil
+	return so.buff.Write(e)
 }
 
-func (so *Sqs) flush() error {
-	so.currentSize = 0
-	so.lastFlushed = time.Now()
+func (so *Sqs) Flush() {
 	tmp := so.buff
 	so.buff = so.pool.Get().(*bytes.Buffer)
 	so.wg.Add(1)
@@ -109,13 +82,13 @@ func (so *Sqs) flush() error {
 		}
 
 	}()
-	return nil
+	return
 }
 
 func (so *Sqs) Close() error {
 	so.mu.Lock()
-	err := so.flush()
+	so.Flush()
 	so.wg.Wait()
 	fmt.Println(`closed`)
-	return err
+	return nil
 }

@@ -3,21 +3,28 @@ package entities
 import (
 	routing "github.com/qiangxue/fasthttp-routing"
 	"strings"
+	"time"
 )
 
 type Event struct {
 	RawData    map[string]string `json:"raw_data"`
 	Enrichment Enrichment        `json:"enrichment"`
+	Metadata   Metadata          `json:"metadata"`
 }
 
 type Enrichment struct {
 	Headers map[string]string
 }
 
+type Metadata struct {
+	WrittenAt string
+}
+
 func EventFromRoutingCtx(ctx *routing.Context) (Event, error) {
 	return Event{
 		RawData:    queryParamsToMap(ctx.Request.URI().QueryString(), '=', '&'),
 		Enrichment: Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')},
+		Metadata:   Metadata{WrittenAt: time.Now().Format(time.RFC3339)},
 	}, nil
 }
 

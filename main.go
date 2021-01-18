@@ -10,13 +10,12 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/atomic"
-	"io"
 	"os"
 	"os/signal"
 )
 
-var driverRegistry = map[string]func() io.WriteCloser{
-	`stdout`: func() io.WriteCloser {
+var driverRegistry = map[string]func() drivers.Driver{
+	`stdout`: func() drivers.Driver {
 		return &drivers.StdOut{}
 	},
 	`s3`:  drivers.NewS3,
@@ -41,7 +40,7 @@ func main() {
 
 }
 
-func fetchDriver() func() io.WriteCloser {
+func fetchDriver() func() drivers.Driver {
 	driver, ok := driverRegistry[os.Getenv(`DRIVER`)]
 	if !ok {
 		panic(`driver not found`)
