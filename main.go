@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/maxim-kuderko/plutos/entities"
 	"github.com/maxim-kuderko/plutos/services"
 	"github.com/maxim-kuderko/plutos/services/drivers"
@@ -10,13 +9,12 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/atomic"
-	"io"
 	"os"
 	"os/signal"
 )
 
-var driverRegistry = map[string]func() io.WriteCloser{
-	`stdout`: func() io.WriteCloser {
+var driverRegistry = map[string]func() drivers.Driver{
+	`stdout`: func() drivers.Driver {
 		return &drivers.StdOut{}
 	},
 	`s3`:  drivers.NewS3,
@@ -25,12 +23,11 @@ var driverRegistry = map[string]func() io.WriteCloser{
 
 func main() {
 	log.Logger = zerolog.New(os.Stderr).With().Timestamp().Logger().Level(zerolog.ErrorLevel)
-	log.Err(fmt.Errorf("test"))
 	healthy := atomic.NewBool(true)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	router := routing.New()
-	writer := services.NewWriter(fetchDriver()())
+	writer := services.NewWriter(fetchDriver())
 	defineRoutes(router, healthy, writer)
 
 	go func() {
@@ -41,7 +38,7 @@ func main() {
 
 }
 
-func fetchDriver() func() io.WriteCloser {
+func fetchDriver() func() drivers.Driver {
 	driver, ok := driverRegistry[os.Getenv(`DRIVER`)]
 	if !ok {
 		panic(`driver not found`)
@@ -62,7 +59,6 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *services.Writ
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}
-
 		if w.Write(e) != nil {
 			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
 		}
