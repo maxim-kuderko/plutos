@@ -15,7 +15,7 @@ import (
 )
 
 type S3 struct {
-	CurrentSize   int
+	currentSize   int
 	maxFileSizeMB int
 	lastFlushed   time.Time
 	uploader      *s3manager.Uploader
@@ -30,7 +30,7 @@ var (
 	dataPrefix     = os.Getenv(`S3_PREFIX`)
 	bucket         = os.Getenv(`S3_BUCKET`)
 	isCompressed   = os.Getenv(`S3_IS_COMPRESSED`) == `true`
-	maxTime, _     = strconv.Atoi(os.Getenv(`S3_MAX_BUFFER_TIME_SECONDS`))
+	maxTime, _     = strconv.Atoi(os.Getenv(`MAX_BUFFER_TIME_SECONDS`))
 	maxFileSize, _ = strconv.Atoi(os.Getenv(`S3_MAX_FILE_SIZE`))
 )
 
@@ -92,7 +92,7 @@ func (so *S3) periodicFlush() {
 	maxTimeBetweenFlushes := time.Duration(maxTime) * time.Second
 	for range ticker.C {
 		so.mu.Lock()
-		if time.Since(so.lastFlushed) > maxTimeBetweenFlushes && so.CurrentSize > 0 {
+		if time.Since(so.lastFlushed) > maxTimeBetweenFlushes && so.currentSize > 0 {
 			if err := so.flush(); err != nil {
 				log.Err(err)
 			}
@@ -125,8 +125,8 @@ func (so *S3) Write(e []byte) (int, error) {
 	so.mu.Lock()
 	defer so.mu.Unlock()
 	defer func() {
-		so.CurrentSize += len(e)
-		if so.CurrentSize > so.maxFileSizeMB {
+		so.currentSize += len(e)
+		if so.currentSize > so.maxFileSizeMB {
 			if err := so.flush(); err != nil {
 				log.Err(err)
 			}
@@ -141,7 +141,7 @@ func (so *S3) flush() error {
 	go tmp.Close()
 	var err error
 	so.w, err = so.newUploader()
-	so.CurrentSize = 0
+	so.currentSize = 0
 	so.lastFlushed = time.Now()
 	return err
 }
@@ -149,7 +149,7 @@ func (so *S3) flush() error {
 func (so *S3) Close() error {
 	defer fmt.Println(`closed`)
 	so.mu.Lock()
-	if so.CurrentSize > 0 {
+	if so.currentSize > 0 {
 		if err := so.w.Close(); err != nil {
 			return err
 		}

@@ -19,7 +19,8 @@ var driverRegistry = map[string]func() io.WriteCloser{
 	`stdout`: func() io.WriteCloser {
 		return &drivers.StdOut{}
 	},
-	`s3`: drivers.NewS3,
+	`s3`:  drivers.NewS3,
+	`sqs`: drivers.NewSqs,
 }
 
 func main() {
