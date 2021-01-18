@@ -15,16 +15,6 @@ func (g *gzipper) Write(b []byte) (int, error) {
 	return g.w.Write(b)
 }
 
-func (g *gzipper) Flush() error {
-	err := g.w.Close()
-	if err != nil {
-		return err
-	}
-	g.origWriter.Flush()
-	g.w.Reset(g.origWriter)
-	return err
-}
-
 func (g *gzipper) Close() error {
 	if err := g.w.Close(); err != nil {
 		return err

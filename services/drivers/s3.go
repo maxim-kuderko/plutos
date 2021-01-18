@@ -21,10 +21,9 @@ type S3 struct {
 }
 
 var (
-	region       = os.Getenv(`S3_REGION`)
-	dataPrefix   = os.Getenv(`S3_PREFIX`)
-	bucket       = os.Getenv(`S3_BUCKET`)
-	isCompressed = os.Getenv(`S3_IS_COMPRESSED`) == `true`
+	region     = os.Getenv(`S3_REGION`)
+	dataPrefix = os.Getenv(`S3_PREFIX`)
+	bucket     = os.Getenv(`S3_BUCKET`)
 )
 
 func NewS3() Driver {
@@ -89,15 +88,6 @@ func (so *S3) upload(r *io.PipeReader) {
 // not go routine safe
 func (so *S3) Write(e []byte) (int, error) {
 	return so.w.Write(e)
-}
-
-// not go routine safe
-func (so *S3) Flush() error {
-	tmp := so.w
-	go tmp.Close()
-	var err error
-	so.w, err = so.newUploader()
-	return err
 }
 
 func (so *S3) Close() error {

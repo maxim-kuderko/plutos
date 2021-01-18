@@ -18,9 +18,8 @@ type Sqs struct {
 
 	buff *bytes.Buffer
 
-	pool sync.Pool
-	mu   sync.Mutex
-	wg   sync.WaitGroup
+	mu sync.Mutex
+	wg sync.WaitGroup
 }
 
 var (
@@ -35,12 +34,8 @@ func NewSqs() Driver {
 		//Credentials: credentials.NewStaticCredentials(key, secret, ""),
 	}))
 	client := sqs.New(svc)
-	s := &Sqs{client: client, pool: sync.Pool{
-		New: func() interface{} {
-			return bytes.NewBuffer(nil)
-		},
-	}}
-	s.buff = s.pool.Get().(*bytes.Buffer)
+	s := &Sqs{client: client}
+	s.buff = bytes.NewBuffer(nil)
 	return s
 }
 func validateInitialSettingsSQS() {
@@ -59,33 +54,16 @@ func (so *Sqs) Write(e []byte) (int, error) {
 	return so.buff.Write(e)
 }
 
-func (so *Sqs) Flush() error {
-	tmp := so.buff
-	so.buff = so.pool.Get().(*bytes.Buffer)
-	so.wg.Add(1)
-	go func() {
-		defer func() {
-			tmp.Reset()
-			so.pool.Put(tmp)
-			so.wg.Done()
-		}()
-		u, _ := uuid.NewUUID()
-		for _, endpoint := range endpoints {
-			_, err := so.client.SendMessage(&sqs.SendMessageInput{
-				MessageBody:            aws.String(tmp.String()),
-				MessageDeduplicationId: aws.String(u.String()),
-				MessageGroupId:         aws.String(``),
-				QueueUrl:               aws.String(endpoint),
-			})
-			log.Error().Stack().Err(err).Msg("")
-		}
-
-	}()
-	return nil
-}
-
 func (so *Sqs) Close() error {
-	so.Flush()
-	so.wg.Wait()
+	u, _ := uuid.NewUUID()
+	for _, endpoint := range endpoints {
+		_, err := so.client.SendMessage(&sqs.SendMessageInput{
+			MessageBody:            aws.String(so.buff.String()),
+			MessageDeduplicationId: aws.String(u.String()),
+			MessageGroupId:         aws.String(``),
+			QueueUrl:               aws.String(endpoint),
+		})
+		log.Error().Stack().Err(err).Msg("")
+	}
 	return nil
 }
