@@ -62,8 +62,11 @@ func (w *Writer) Write(e entities.Event) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	err := jsoniter.ConfigFastest.NewEncoder(w.driver).Encode(e)
+	if err != nil {
+		return err
+	}
 	w.currentSize++
-	return err
+	return nil
 
 }
 
