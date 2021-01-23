@@ -11,6 +11,7 @@ import (
 	"go.uber.org/atomic"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 var driverRegistry = map[string]func() drivers.Driver{
@@ -25,7 +26,7 @@ func main() {
 	log.Logger = zerolog.New(os.Stderr).With().Timestamp().Logger().Level(zerolog.ErrorLevel)
 	healthy := atomic.NewBool(true)
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	router := routing.New()
 	writer := services.NewWriter(fetchDriver())
 	defineRoutes(router, healthy, writer)
@@ -55,7 +56,18 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *services.Writ
 	})
 
 	router.Get("/e", func(c *routing.Context) error {
-		e, err := entities.EventFromRoutingCtx(c)
+		e, err := entities.EventFromRoutingCtxGET(c)
+		if err != nil {
+			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
+		}
+		if w.Write(e) != nil {
+			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
+		}
+		return nil
+	})
+
+	router.Post("/e", func(c *routing.Context) error {
+		e, err := entities.EventFromRoutingCtxPOST(c)
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}

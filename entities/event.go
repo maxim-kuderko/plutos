@@ -1,15 +1,17 @@
 package entities
 
 import (
+	"encoding/json"
+	jsoniter "github.com/json-iterator/go"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"strings"
 	"time"
 )
 
 type Event struct {
-	RawData    map[string]string `json:"raw_data"`
-	Enrichment Enrichment        `json:"enrichment"`
-	Metadata   Metadata          `json:"metadata"`
+	RawData    json.RawMessage `json:"raw_data"`
+	Enrichment Enrichment      `json:"enrichment"`
+	Metadata   Metadata        `json:"metadata"`
 }
 
 type Enrichment struct {
@@ -20,9 +22,18 @@ type Metadata struct {
 	WrittenAt string
 }
 
-func EventFromRoutingCtx(ctx *routing.Context) (Event, error) {
+func EventFromRoutingCtxGET(ctx *routing.Context) (Event, error) {
+	data, err := jsoniter.ConfigFastest.Marshal(queryParamsToMap(ctx.Request.URI().QueryString(), '=', '&'))
 	return Event{
-		RawData:    queryParamsToMap(ctx.Request.URI().QueryString(), '=', '&'),
+		RawData:    data,
+		Enrichment: Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')},
+		Metadata:   Metadata{WrittenAt: time.Now().Format(time.RFC3339)},
+	}, err
+}
+
+func EventFromRoutingCtxPOST(ctx *routing.Context) (Event, error) {
+	return Event{
+		RawData:    ctx.PostBody(),
 		Enrichment: Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')},
 		Metadata:   Metadata{WrittenAt: time.Now().Format(time.RFC3339)},
 	}, nil
