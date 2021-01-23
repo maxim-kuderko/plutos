@@ -29,28 +29,38 @@ var (
 
 func NewSqs() Driver {
 	validateInitialSettingsSQS()
+	client := newSqsSender()
+	s := &Sqs{client: client}
+	s.buff = bytes.NewBuffer(nil)
+	return s
+}
+
+func newSqsSender() *sqs.SQS {
 	svc := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
 		//Credentials: credentials.NewStaticCredentials(key, secret, ""),
 	}))
 	client := sqs.New(svc)
-	s := &Sqs{client: client}
-	s.buff = bytes.NewBuffer(nil)
-	return s
+	return client
 }
+
 func validateInitialSettingsSQS() {
 	if len(endpoints) == 0 {
-		panic(`no sqs endpoints provided`)
+		panic(`no SQS_ENDPOINTS provided`)
 	}
 	if bufferSize == 0 {
-		panic(`no sqs buffer size provided`)
+		panic(`no sSQS_BUFFER provided`)
 	}
 	if bufferSize > 1024*256 {
-		panic(`sqs buffer too large`)
+		panic(`SQS_BUFFER too large`)
 	}
 }
 
 func (so *Sqs) Write(e []byte) (int, error) {
+	if so.buff.Len() > bufferSize {
+		so.Close()
+		so.client = newSqsSender()
+	}
 	return so.buff.Write(e)
 }
 
