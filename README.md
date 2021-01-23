@@ -26,12 +26,5 @@ docker run --network=host \
 
 
 # Benchmarks
-`wrk -t2 -c100 -d10s "http://127.0.0.1:8080/e?test=me"
-Running 10s test @ http://127.0.0.1:8080/e?test=me
-2 threads and 100 connections
-    Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   533.06us    1.19ms  32.27ms   95.47%
-    Req/Sec   119.28k     9.30k  130.28k    87.00%
-2373350 requests in 10.04s, 86.01MB read
-Requests/sec: 236426.37
-Transfer/sec:      8.57MB`
+wrk -t2 -c100 -d10s "http://127.0.0.1:8080/e?test=me"
+![img.png](img.png)
