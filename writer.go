@@ -1,9 +1,7 @@
-package services
+package plutos
 
 import (
-	jsoniter "github.com/json-iterator/go"
-	"github.com/maxim-kuderko/plutos/entities"
-	"github.com/maxim-kuderko/plutos/services/drivers"
+	"github.com/maxim-kuderko/plutos/drivers"
 	"os"
 	"strconv"
 	"sync"
@@ -41,33 +39,36 @@ func NewWriter(d func() drivers.Driver) *Writer {
 func (w *Writer) periodicFlush() {
 	ticker := time.NewTicker(time.Duration(maxTime) * time.Second)
 	for range ticker.C {
-		newDrv := w.newDriver()
-		w.mu.Lock()
-		if w.currentSize == 0 {
-			w.mu.Unlock()
-			return
-		}
-		tmp := w.driver
-		w.driver = newDrv
-		w.currentSize = 0
-		w.wg.Add(1)
-		go func() {
-			defer w.wg.Done()
-			tmp.Close()
-		}()
-		w.mu.Unlock()
+		w.flush()
 	}
 }
 
-func (w *Writer) Write(e entities.Event) error {
+func (w *Writer) flush() {
+	newDrv := w.newDriver()
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	err := jsoniter.ConfigFastest.NewEncoder(w.driver).Encode(e)
-	if err != nil {
-		return err
+	if w.currentSize == 0 {
+		return
 	}
-	w.currentSize++
-	return nil
+	tmp := w.driver
+	w.driver = newDrv
+	w.currentSize = 0
+	w.wg.Add(1)
+	go func() {
+		defer w.wg.Done()
+		tmp.Close()
+	}()
+}
+
+func (w *Writer) Write(b []byte) (n int, err error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	defer func() {
+		if err == nil {
+			w.currentSize++
+		}
+	}()
+	return w.driver.Write(b)
 
 }
 

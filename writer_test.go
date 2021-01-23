@@ -1,8 +1,7 @@
-package services
+package plutos
 
 import (
-	"github.com/maxim-kuderko/plutos/entities"
-	"github.com/maxim-kuderko/plutos/services/drivers"
+	"github.com/maxim-kuderko/plutos/drivers"
 	"sync"
 	"testing"
 )
@@ -12,9 +11,9 @@ func TestWriter_SingleWrite(t *testing.T) {
 	tester := NewWriter(func() drivers.Driver {
 		return stub
 	})
-	e := entities.Event{
+	e := Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: entities.Enrichment{
+		Enrichment: Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
@@ -29,9 +28,9 @@ func TestWriter_MultiWrite(t *testing.T) {
 	tester := NewWriter(func() drivers.Driver {
 		return stub
 	})
-	e := entities.Event{
+	e := Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: entities.Enrichment{
+		Enrichment: Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
@@ -49,9 +48,9 @@ func TestWriter_ConcurrentMultiWrite(t *testing.T) {
 	tester := NewWriter(func() drivers.Driver {
 		return stub
 	})
-	e := entities.Event{
+	e := Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: entities.Enrichment{
+		Enrichment: Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
@@ -73,9 +72,9 @@ func TestWriter_ConcurrentMultiWrite(t *testing.T) {
 func BenchmarkWriter_Write(b *testing.B) {
 	b.ReportAllocs()
 	tester := NewWriter(drivers.NewStub)
-	e := entities.Event{
+	e := Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: entities.Enrichment{
+		Enrichment: Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
