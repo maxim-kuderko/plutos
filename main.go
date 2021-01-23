@@ -14,13 +14,17 @@ import (
 	"syscall"
 )
 
-var driverRegistry = map[string]func() drivers.Driver{
-	`stdout`: func() drivers.Driver {
-		return &drivers.StdOut{}
-	},
-	`s3`:  drivers.NewS3,
-	`sqs`: drivers.NewSqs,
-}
+var (
+	driver = os.Getenv(`DRIVER`)
+
+	driverRegistry = map[string]func() drivers.Driver{
+		`stdout`: func() drivers.Driver {
+			return &drivers.StdOut{}
+		},
+		`s3`:  drivers.NewS3,
+		`sqs`: drivers.NewSqs,
+	}
+)
 
 func main() {
 	log.Logger = zerolog.New(os.Stderr).With().Timestamp().Logger().Level(zerolog.ErrorLevel)
@@ -40,7 +44,7 @@ func main() {
 }
 
 func fetchDriver() func() drivers.Driver {
-	driver, ok := driverRegistry[os.Getenv(`DRIVER`)]
+	driver, ok := driverRegistry[driver]
 	if !ok {
 		panic(`driver not found`)
 	}

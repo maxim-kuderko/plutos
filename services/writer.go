@@ -12,7 +12,6 @@ import (
 
 type Writer struct {
 	currentSize int
-	lastFlushed time.Time
 	newDriver   func() drivers.Driver
 	driver      drivers.Driver
 
@@ -22,38 +21,40 @@ type Writer struct {
 
 var (
 	maxTime, _ = strconv.Atoi(os.Getenv(`MAX_BUFFER_TIME_SECONDS`))
+	enableGzip = os.Getenv(`ENABLE_GZIP`)
 )
 
 func NewWriter(d func() drivers.Driver) *Writer {
 	selectedDriver := d
-	if os.Getenv(`ENABLE_GZIP`) == `true` {
+	if enableGzip == `true` {
 		compressed := func() drivers.Driver {
 			t, _ := drivers.NewGzipper(d)
 			return t
 		}
 		selectedDriver = compressed
 	}
-	w := &Writer{driver: selectedDriver(), lastFlushed: time.Now(), newDriver: selectedDriver}
+	w := &Writer{driver: selectedDriver(), newDriver: selectedDriver}
 	go w.periodicFlush()
 	return w
 }
 
 func (w *Writer) periodicFlush() {
-	ticker := time.NewTicker(time.Second)
-	maxTimeBetweenFlushes := time.Duration(maxTime) * time.Second
+	ticker := time.NewTicker(time.Duration(maxTime) * time.Second)
 	for range ticker.C {
+		newDrv := w.newDriver()
 		w.mu.Lock()
-		if time.Since(w.lastFlushed) > maxTimeBetweenFlushes && w.currentSize > 0 {
-			tmp := w.driver
-			w.driver = w.newDriver()
-			w.lastFlushed = time.Now()
-			w.currentSize = 0
-			w.wg.Add(1)
-			go func() {
-				defer w.wg.Done()
-				tmp.Close()
-			}()
+		if w.currentSize == 0 {
+			w.mu.Unlock()
+			return
 		}
+		tmp := w.driver
+		w.driver = newDrv
+		w.currentSize = 0
+		w.wg.Add(1)
+		go func() {
+			defer w.wg.Done()
+			tmp.Close()
+		}()
 		w.mu.Unlock()
 	}
 }

@@ -1,8 +1,8 @@
 package entities
 
 import (
+	"bytes"
 	"encoding/json"
-	jsoniter "github.com/json-iterator/go"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"strings"
 	"time"
@@ -23,48 +23,50 @@ type Metadata struct {
 }
 
 func EventFromRoutingCtxGET(ctx *routing.Context) (Event, error) {
-	data, err := jsoniter.ConfigFastest.Marshal(queryParamsToMap(ctx.Request.URI().QueryString(), '=', '&'))
+	//data, err := jsoniter.ConfigFastest.Marshal()
 	return Event{
-		RawData:    data,
-		Enrichment: Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')},
-		Metadata:   Metadata{WrittenAt: time.Now().Format(time.RFC3339)},
-	}, err
-}
-
-func EventFromRoutingCtxPOST(ctx *routing.Context) (Event, error) {
-	return Event{
-		RawData:    ctx.PostBody(),
+		RawData:    queryParamsToMapJson(ctx.Request.URI().QueryString(), '=', '&'),
 		Enrichment: Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')},
 		Metadata:   Metadata{WrittenAt: time.Now().Format(time.RFC3339)},
 	}, nil
 }
 
-func queryParamsToMap(b []byte, kvSep, paramSep byte) map[string]string {
-	var k, v strings.Builder
-	output := map[string]string{}
+func EventFromRoutingCtxPOST(ctx *routing.Context) (Event, error) {
+	return Event{
+		RawData:    ctx.Request.Body(),
+		Enrichment: Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')},
+		Metadata:   Metadata{WrittenAt: time.Now().Format(time.RFC3339)},
+	}, nil
+}
 
-	currentWriter := &k
+var empty = json.RawMessage("{}")
 
+func queryParamsToMapJson(b []byte, kvSep, paramSep byte) json.RawMessage {
+	output := bytes.NewBuffer(nil)
+	output.WriteString(`{`)
+	isSTart := true
 	for _, c := range b {
+		if isSTart {
+			output.WriteByte('"')
+			isSTart = false
+		}
 		if c == kvSep {
-			currentWriter = &v
+			output.WriteString(`":`)
+			isSTart = true
 			continue
 		}
 		if c == paramSep {
-			if k.Len() > 0 {
-				output[k.String()] = v.String()
-				k.Reset()
-				v.Reset()
-			}
-			currentWriter = &k
+			output.WriteString(`",`)
+			isSTart = true
 			continue
 		}
-		currentWriter.WriteByte(c)
+		output.WriteByte(c)
 	}
-	if k.Len() > 0 {
-		output[k.String()] = v.String()
+	if output.Len() == 0 {
+		return empty
 	}
-	return output
+	output.WriteString(`"}`)
+	return output.Bytes()
 }
 
 func headersToMap(b []byte, kvSep, paramSep byte) map[string]string {

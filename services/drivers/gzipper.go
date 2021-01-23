@@ -6,25 +6,14 @@ import (
 	"strconv"
 )
 
+var (
+	lvl, _ = strconv.Atoi(os.Getenv(`GZIP_LVL`))
+)
+
 type gzipper struct {
 	origWriter Driver
 	w          *pgzip.Writer
 }
-
-func (g *gzipper) Write(b []byte) (int, error) {
-	return g.w.Write(b)
-}
-
-func (g *gzipper) Close() error {
-	if err := g.w.Close(); err != nil {
-		return err
-	}
-	return g.origWriter.Close()
-}
-
-var (
-	lvl, _ = strconv.Atoi(os.Getenv(`GZIP_LVL`))
-)
 
 func NewGzipper(w func() Driver) (Driver, error) {
 	orig := w()
@@ -36,4 +25,15 @@ func NewGzipper(w func() Driver) (Driver, error) {
 		origWriter: orig,
 		w:          gw,
 	}, nil
+}
+
+func (g *gzipper) Write(b []byte) (int, error) {
+	return g.w.Write(b)
+}
+
+func (g *gzipper) Close() error {
+	if err := g.w.Close(); err != nil {
+		return err
+	}
+	return g.origWriter.Close()
 }
