@@ -20,22 +20,30 @@ type Enrichment struct {
 
 type Metadata struct {
 	WrittenAt string
+	RequestID string
 }
 
 func EventFromRoutingCtxGET(ctx *routing.Context) (Event, error) {
-	//data, err := jsoniter.ConfigFastest.Marshal()
 	return Event{
 		RawData:    queryParamsToMapJson(ctx.Request.URI().QueryString(), '=', '&'),
-		Enrichment: Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')},
-		Metadata:   Metadata{WrittenAt: time.Now().Format(time.RFC3339)},
+		Enrichment: getEnrichment(ctx),
+		Metadata:   generateMetadata(),
 	}, nil
+}
+
+func getEnrichment(ctx *routing.Context) Enrichment {
+	return Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')}
+}
+
+func generateMetadata() Metadata {
+	return Metadata{WrittenAt: time.Now().Format(time.RFC3339) /* RequestID: uuid.New().String()*/}
 }
 
 func EventFromRoutingCtxPOST(ctx *routing.Context) (Event, error) {
 	return Event{
 		RawData:    ctx.Request.Body(),
-		Enrichment: Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')},
-		Metadata:   Metadata{WrittenAt: time.Now().Format(time.RFC3339)},
+		Enrichment: getEnrichment(ctx),
+		Metadata:   generateMetadata(),
 	}, nil
 }
 
