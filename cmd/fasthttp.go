@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos"
 	"github.com/maxim-kuderko/plutos/drivers"
 	"github.com/qiangxue/fasthttp-routing"
@@ -27,7 +28,14 @@ func main() {
 	defineRoutes(router, healthy, writer)
 
 	go func() {
-		log.Err(fasthttp.ListenAndServe(":8080", router.HandleRequest))
+		srv := fasthttp.Server{
+			Handler:               router.HandleRequest,
+			TCPKeepalive:          true,
+			NoDefaultServerHeader: true,
+			NoDefaultDate:         true,
+			NoDefaultContentType:  true,
+		}
+		log.Err(srv.ListenAndServe(":8080"))
 	}()
 	<-c
 	writer.Close()
@@ -47,7 +55,7 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}
-		if json.NewEncoder(w).Encode(e) != nil {
+		if jsoniter.ConfigFastest.NewEncoder(w).Encode(e) != nil {
 			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
 		}
 		return nil
@@ -58,7 +66,7 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}
-		if json.NewEncoder(w).Encode(e) != nil {
+		if jsoniter.ConfigFastest.NewEncoder(w).Encode(e) != nil {
 			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
 		}
 		return nil

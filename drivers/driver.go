@@ -14,8 +14,9 @@ var (
 		`stdout`: func() Driver {
 			return &StdOut{}
 		},
-		`s3`:  NewS3,
-		`sqs`: NewSqs,
+		`stub`: NewStub,
+		`s3`:   NewS3,
+		`sqs`:  NewSqs,
 	}
 )
 
