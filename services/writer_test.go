@@ -3,14 +3,78 @@ package services
 import (
 	"github.com/maxim-kuderko/plutos/entities"
 	"github.com/maxim-kuderko/plutos/services/drivers"
+	"sync"
 	"testing"
 )
 
+func TestWriter_SingleWrite(t *testing.T) {
+	stub := drivers.NewStub()
+	tester := NewWriter(func() drivers.Driver {
+		return stub
+	})
+	e := entities.Event{
+		RawData: []byte(`{"test": "me"}`),
+		Enrichment: entities.Enrichment{
+			Headers: map[string]string{`testH`: `testH`},
+		},
+	}
+	tester.Write(e)
+	if stub.(*drivers.Stub).Counter() != 1 {
+		t.Fail()
+	}
+}
+
+func TestWriter_MultiWrite(t *testing.T) {
+	stub := drivers.NewStub()
+	tester := NewWriter(func() drivers.Driver {
+		return stub
+	})
+	e := entities.Event{
+		RawData: []byte(`{"test": "me"}`),
+		Enrichment: entities.Enrichment{
+			Headers: map[string]string{`testH`: `testH`},
+		},
+	}
+	times := 1000
+	for i := 0; i < times; i++ {
+		tester.Write(e)
+	}
+	if stub.(*drivers.Stub).Counter() != times {
+		t.Fail()
+	}
+}
+
+func TestWriter_ConcurrentMultiWrite(t *testing.T) {
+	stub := drivers.NewStub()
+	tester := NewWriter(func() drivers.Driver {
+		return stub
+	})
+	e := entities.Event{
+		RawData: []byte(`{"test": "me"}`),
+		Enrichment: entities.Enrichment{
+			Headers: map[string]string{`testH`: `testH`},
+		},
+	}
+	times := 1000
+	wg := sync.WaitGroup{}
+	wg.Add(times)
+	for i := 0; i < times; i++ {
+		go func() {
+			defer wg.Done()
+			tester.Write(e)
+		}()
+	}
+	wg.Wait()
+	if stub.(*drivers.Stub).Counter() != times {
+		t.Fail()
+	}
+}
+
 func BenchmarkWriter_Write(b *testing.B) {
 	b.ReportAllocs()
-	tester := NewWriter(&drivers.StdOut{})
+	tester := NewWriter(drivers.NewStub)
 	e := entities.Event{
-		RawData: map[string]string{`test`: `test`},
+		RawData: []byte(`{"test": "me"}`),
 		Enrichment: entities.Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},

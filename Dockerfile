@@ -1,10 +1,10 @@
-FROM golang:1.15-alpine
-
+FROM golang:1-alpine
+RUN  apk add git
 ADD . /go/src/github.com/maxim-kuderko/plutos
 
 WORKDIR /go/src/github.com/maxim-kuderko/plutos
 
-RUN go install
+RUN  go get ./... && go install
 
 FROM alpine:latest
 
