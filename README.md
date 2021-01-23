@@ -12,7 +12,7 @@
 | SQS_BUFFER  | bytes to keep in memory before flushing to sqs max is 256 KB recommended is multiples of 64KB  |
 
 # How to run
-
+```shell
 docker run --network=host \
        -e DRIVER=s3 \
        -e S3_REGION=<REGION> \
@@ -20,8 +20,10 @@ docker run --network=host \
        -e S3_PREFIX=data \
        -e MAX_BUFFER_TIME_SECONDS=60 \
        -e GZIP_LVL=9 \
-       -e ENABLE_GZIP=true
-       maxkuder/plutos:0.1.0
+       -e ENABLE_GZIP=true \
+       maxkuder/plutos
+```
+
 
 # settings
 
