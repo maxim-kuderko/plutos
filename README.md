@@ -10,6 +10,9 @@
 | S3_PREFIX  | Mandatory prefix inside the bucket (no / as prefix or suffix)  |
 | SQS_ENDPOINTS  | Comma separated full path urls to SQS quues  |
 | SQS_BUFFER  | bytes to keep in memory before flushing to sqs max is 256 KB recommended is multiples of 64KB  |
+| AWS_ACCESS_KEY_ID  | if running in a docker without AWS access or outside of AWS must provide credentials  |
+| AWS_SECRET_ACCESS_KEY  | if running in a docker without AWS access or outside of AWS must provide credentials  |
+
 
 # How to run
 ```shell
@@ -21,6 +24,8 @@ docker run --network=host \
        -e MAX_BUFFER_TIME_SECONDS=60 \
        -e GZIP_LVL=9 \
        -e ENABLE_GZIP=true \
+       -e AWS_ACCESS_KEY_ID=<AWS_KEY> \
+       -e AWS_SECRET_ACCESS_KEY=<AWS SECRET> 
        maxkuder/plutos
 ```
 
