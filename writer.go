@@ -36,7 +36,12 @@ func NewWriter(d func() drivers.Driver) *Writer {
 	return w
 }
 
+const DEFAULT_MAX_TIME = 60
+
 func (w *Writer) periodicFlush() {
+	if maxTime <= 0 {
+		maxTime = DEFAULT_MAX_TIME
+	}
 	ticker := time.NewTicker(time.Duration(maxTime) * time.Second)
 	for range ticker.C {
 		w.flush()

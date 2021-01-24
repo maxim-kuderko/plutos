@@ -1,6 +1,7 @@
 package plutos
 
 import (
+	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos/drivers"
 	"sync"
 	"testing"
@@ -17,7 +18,7 @@ func TestWriter_SingleWrite(t *testing.T) {
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
-	tester.Write(e)
+	jsoniter.ConfigFastest.NewEncoder(tester).Encode(e)
 	if stub.(*drivers.Stub).Counter() != 1 {
 		t.Fail()
 	}
@@ -36,7 +37,7 @@ func TestWriter_MultiWrite(t *testing.T) {
 	}
 	times := 1000
 	for i := 0; i < times; i++ {
-		tester.Write(e)
+		jsoniter.ConfigFastest.NewEncoder(tester).Encode(e)
 	}
 	if stub.(*drivers.Stub).Counter() != times {
 		t.Fail()
@@ -60,7 +61,7 @@ func TestWriter_ConcurrentMultiWrite(t *testing.T) {
 	for i := 0; i < times; i++ {
 		go func() {
 			defer wg.Done()
-			tester.Write(e)
+			jsoniter.ConfigFastest.NewEncoder(tester).Encode(e)
 		}()
 	}
 	wg.Wait()
@@ -78,8 +79,9 @@ func BenchmarkWriter_Write(b *testing.B) {
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
+	data, _ := jsoniter.ConfigFastest.Marshal(e)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tester.Write(e)
+		tester.Write(data)
 	}
 }
