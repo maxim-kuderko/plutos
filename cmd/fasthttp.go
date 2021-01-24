@@ -35,7 +35,7 @@ func main() {
 			NoDefaultDate:         true,
 			NoDefaultContentType:  true,
 		}
-		log.Err(srv.ListenAndServe(":8080"))
+		log.Err(srv.ListenAndServe(os.Getenv(`PORT`)))
 	}()
 	<-c
 	writer.Close()

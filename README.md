@@ -2,6 +2,7 @@
 
 | ENV  | Description |
 | ------------- | ------------- |
+| PORT  | application port i.e: ":8080" |
 | DRIVER  | s3 / sqs / stdout / stub |
 | ENABLE_GZIP  | true / false  |
 | MAX_BUFFER_TIME_SECONDS  | must be >=1  |
@@ -16,7 +17,8 @@
 
 # How to run
 ```shell
-docker run --network=host \
+docker run --netowrk=host \
+       -e PORT=:8080 \
        -e DRIVER=s3 \
        -e S3_REGION=<REGION> \
        -e S3_BUCKET=<BUCKET> \
@@ -28,7 +30,7 @@ docker run --network=host \
        -e AWS_SECRET_ACCESS_KEY=<AWS SECRET> 
        maxkuder/plutos
 ```
-
+- running with network=host increases performance by up to x2
 
 # Benchmarks
 i7 6700K @ 4.0Ghz
