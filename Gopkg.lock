@@ -109,17 +109,6 @@
   version = "v1.2.5"
 
 [[projects]]
-  digest = "1:2ce947d20fc1249021cf6cae39c8191b3c5681c8b417c0b2e201d4d179bf2cd7"
-  name = "github.com/maxim-kuderko/plutos"
-  packages = [
-    ".",
-    "drivers",
-  ]
-  pruneopts = "UT"
-  revision = "a36427472a2dbd4663cb00d05c30f5837e1c67fb"
-  version = "v0.1.2"
-
-[[projects]]
   digest = "1:33422d238f147d247752996a26574ac48dcf472976eda7f5134015f06bf16563"
   name = "github.com/modern-go/concurrent"
   packages = ["."]
@@ -188,9 +177,13 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/aws/aws-sdk-go/aws",
+    "github.com/aws/aws-sdk-go/aws/session",
+    "github.com/aws/aws-sdk-go/service/s3/s3manager",
+    "github.com/aws/aws-sdk-go/service/sqs",
+    "github.com/google/uuid",
     "github.com/json-iterator/go",
-    "github.com/maxim-kuderko/plutos",
-    "github.com/maxim-kuderko/plutos/drivers",
+    "github.com/klauspost/pgzip",
     "github.com/qiangxue/fasthttp-routing",
     "github.com/rs/zerolog",
     "github.com/rs/zerolog/log",
