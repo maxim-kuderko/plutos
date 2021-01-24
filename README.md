@@ -33,7 +33,7 @@ docker run --netowrk=host \
 - running with network=host increases performance by up to x2
 
 # Benchmarks
-i7 6700K @ 4.0Ghz
-GOMAXPROCS=6
-wrk -t2 -c100 -d10s "http://127.0.0.1:8080/e?test=me"
+i7 6700K @ 4.0Ghz <br>
+GOMAXPROCS=6 <br>
+wrk -t2 -c100 -d10s "http://127.0.0.1:8080/e?test=me" <br>
 ![img.png](img.png)
