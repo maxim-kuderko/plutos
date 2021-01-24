@@ -1,10 +1,16 @@
 package plutos
 
 import (
+	"bytes"
+	"compress/gzip"
+	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos/drivers"
+	"io/ioutil"
+	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestWriter_SingleWrite(t *testing.T) {
@@ -66,6 +72,79 @@ func TestWriter_ConcurrentMultiWrite(t *testing.T) {
 	}
 	wg.Wait()
 	if stub.(*drivers.Stub).Counter() != times {
+		t.Fail()
+	}
+}
+
+func TestWriter_ConcurrentMultiWriteGZIP(t *testing.T) {
+	stub := drivers.NewStub()
+	enableGzip = `true`
+	tester := NewWriter(func() drivers.Driver {
+		return stub
+	})
+	e := Event{
+		RawData: []byte(`{"test": "me"}`),
+		Enrichment: Enrichment{
+			Headers: map[string]string{`testH`: `testH`},
+		},
+	}
+	times := 1000
+	wg := sync.WaitGroup{}
+	wg.Add(times)
+	for i := 0; i < times; i++ {
+		go func() {
+			defer wg.Done()
+			jsoniter.ConfigFastest.NewEncoder(tester).Encode(e)
+		}()
+	}
+	wg.Wait()
+	tester.Close()
+
+	r, err := gzip.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	data, _ := ioutil.ReadAll(r)
+	if len(strings.Split(string(data), "\n")) != times+1 {
+		fmt.Println(len(strings.Split(string(data), "\n")))
+		t.Fail()
+	}
+}
+
+func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
+	stub := drivers.NewStub()
+	enableGzip = `true`
+	maxTime = 1
+	tester := NewWriter(func() drivers.Driver {
+		return stub
+	})
+	e := Event{
+		RawData: []byte(`{"test": "me"}`),
+		Enrichment: Enrichment{
+			Headers: map[string]string{`testH`: `testH`},
+		},
+	}
+	times := 1000
+	wg := sync.WaitGroup{}
+	wg.Add(times)
+	for i := 0; i < times; i++ {
+		go func() {
+			defer wg.Done()
+			jsoniter.ConfigFastest.NewEncoder(tester).Encode(e)
+		}()
+	}
+	wg.Wait()
+	time.Sleep(time.Second * (time.Duration(maxTime) + 2))
+
+	r, err := gzip.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	data, _ := ioutil.ReadAll(r)
+	if len(strings.Split(string(data), "\n")) != times+1 {
+		fmt.Println(len(strings.Split(string(data), "\n")))
 		t.Fail()
 	}
 }
