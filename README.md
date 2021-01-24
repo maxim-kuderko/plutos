@@ -14,8 +14,8 @@
 | AWS_ACCESS_KEY_ID  | if running in a docker without AWS access or outside of AWS must provide credentials  |
 | AWS_SECRET_ACCESS_KEY  | if running in a docker without AWS access or outside of AWS must provide credentials  |
 
-
 # How to run
+
 ```shell
 docker run --netowrk=host \
        -e PORT=:8080 \
@@ -30,9 +30,19 @@ docker run --netowrk=host \
        -e AWS_SECRET_ACCESS_KEY=<AWS SECRET> 
        maxkuder/plutos:0.1.2
 ```
+
+from source:
+
+```shell
+go get ./... && go build -o plutos cmd/fasthttp.go
+chmox +x plutos
+./plutos
+```
+
 - running with network=host increases performance by up to x2
 
 # Benchmarks
+
 i7 6700K @ 4.0Ghz <br>
 GOMAXPROCS=6 <br>
 wrk -t2 -c100 -d10s "http://127.0.0.1:8080/e?test=me" <br>
