@@ -1,4 +1,6 @@
 # plutos
+[![CircleCI](https://circleci.com/gh/maxim-kuderko/plutos.svg?style=svg)](https://circleci.com/gh/maxim-kuderko/plutos)
+
 
 | ENV  | Description |
 | ------------- | ------------- |
