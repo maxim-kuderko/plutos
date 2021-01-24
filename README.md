@@ -28,7 +28,7 @@ docker run --netowrk=host \
        -e ENABLE_GZIP=true \
        -e AWS_ACCESS_KEY_ID=<AWS_KEY> \
        -e AWS_SECRET_ACCESS_KEY=<AWS SECRET> 
-       maxkuder/plutos
+       maxkuder/plutos:0.1.2
 ```
 - running with network=host increases performance by up to x2
 
