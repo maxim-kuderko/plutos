@@ -69,15 +69,10 @@ func (so *S3) newUploader() (io.WriteCloser, error) {
 func (so *S3) upload(r *io.PipeReader) {
 	defer so.wg.Done()
 	t := time.Now()
-	uid, err := uuid.NewUUID()
-	if err != nil {
-		log.Error().Stack().Err(err).Msg("")
-		return
-	}
-	_, err = so.uploader.Upload(&s3manager.UploadInput{
+	_, err := so.uploader.Upload(&s3manager.UploadInput{
 		Body:   r,
 		Bucket: aws.String(bucket),
-		Key:    aws.String(fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s`, dataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uid.String())),
+		Key:    aws.String(fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s`, dataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String())),
 	})
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("")
