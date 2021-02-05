@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos"
 	"github.com/maxim-kuderko/plutos/drivers"
@@ -86,7 +87,7 @@ func getEnrichment(ctx *routing.Context) plutos.Enrichment {
 }
 
 func generateMetadata() plutos.Metadata {
-	return plutos.Metadata{WrittenAt: time.Now().Format(time.RFC3339) /* RequestID: uuid.New().String()*/}
+	return plutos.Metadata{WrittenAt: time.Now().Format(time.RFC3339), RequestID: uuid.New().String()}
 }
 
 func EventFromRoutingCtxPOST(ctx *routing.Context) (plutos.Event, error) {

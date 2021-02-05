@@ -25,12 +25,12 @@ docker run --netowrk=host \
        -e S3_REGION=<REGION> \
        -e S3_BUCKET=<BUCKET> \
        -e S3_PREFIX=data \
-       -e MAX_BUFFER_TIME_SECONDS=60 \
+       -e MAX_BUFFER_TIME_MILLISECONDS=60000 \
        -e GZIP_LVL=9 \
        -e ENABLE_GZIP=true \
        -e AWS_ACCESS_KEY_ID=<AWS_KEY> \
        -e AWS_SECRET_ACCESS_KEY=<AWS SECRET> 
-       maxkuder/plutos:0.1.2
+       maxkuder/plutos:0.1.3
 ```
 
 from source:

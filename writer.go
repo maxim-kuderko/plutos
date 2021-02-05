@@ -18,7 +18,7 @@ type Writer struct {
 }
 
 var (
-	maxTime, _ = strconv.Atoi(os.Getenv(`MAX_BUFFER_TIME_SECONDS`))
+	maxTime, _ = strconv.Atoi(os.Getenv(`MAX_BUFFER_TIME_MILLISECONDS`))
 	enableGzip = os.Getenv(`ENABLE_GZIP`)
 )
 
@@ -42,7 +42,7 @@ func (w *Writer) periodicFlush() {
 	if maxTime <= 0 {
 		maxTime = DEFAULT_MAX_TIME
 	}
-	ticker := time.NewTicker(time.Duration(maxTime) * time.Second)
+	ticker := time.NewTicker(time.Duration(maxTime) * time.Millisecond)
 	for range ticker.C {
 		w.flush()
 	}
