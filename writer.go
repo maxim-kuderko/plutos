@@ -49,12 +49,12 @@ func (w *Writer) periodicFlush() {
 }
 
 func (w *Writer) flush() {
-	newDrv := w.newDriver()
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.currentSize == 0 {
 		return
 	}
+	newDrv := w.newDriver()
 	tmp := w.driver
 	w.driver = newDrv
 	w.currentSize = 0

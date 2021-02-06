@@ -7,7 +7,7 @@
 | PORT  | application port i.e: ":8080" |
 | DRIVER  | s3 / sqs / stdout / stub |
 | ENABLE_GZIP  | true / false  |
-| MAX_BUFFER_TIME_SECONDS  | must be >=1  |
+| MAX_BUFFER_TIME_MILLISECONDS  | must be >=1  |
 | GZIP_LVL  | INT between 0-9  |
 | S3_BUCKET  | S3 bucket name  |
 | S3_PREFIX  | Mandatory prefix inside the bucket (no / as prefix or suffix)  |
@@ -29,8 +29,9 @@ docker run --netowrk=host \
        -e GZIP_LVL=9 \
        -e ENABLE_GZIP=true \
        -e AWS_ACCESS_KEY_ID=<AWS_KEY> \
-       -e AWS_SECRET_ACCESS_KEY=<AWS SECRET> 
-       maxkuder/plutos:0.1.3
+       -e AWS_SECRET_ACCESS_KEY=<AWS SECRET>  \
+       -e SQS_QUEUE=<SQS_ENDPOINT>
+       maxkuder/plutos:0.1.4
 ```
 
 from source:
