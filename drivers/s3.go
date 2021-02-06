@@ -103,11 +103,10 @@ func (so *S3) upload(r *io.PipeReader) {
 			},
 		}})
 	uid := uuid.New().String()
-	h, _ := os.Hostname()
 	if _, err := sqs.New(so.sess).SendMessage(&sqs.SendMessageInput{
 		MessageBody:            aws.String(string(b)),
 		MessageDeduplicationId: aws.String(uid),
-		MessageGroupId:         aws.String(h),
+		MessageGroupId:         aws.String(uid),
 		QueueUrl:               aws.String(sqsQueue),
 	}); err != nil {
 
