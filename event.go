@@ -11,10 +11,10 @@ type Event struct {
 }
 
 type Enrichment struct {
-	Headers map[string]string
+	Headers map[string]string `json:"headers"`
 }
 
 type Metadata struct {
-	WrittenAt string
-	RequestID string
+	WrittenAt string `json:"written_at"`
+	RequestID string `json:"request_id"`
 }
