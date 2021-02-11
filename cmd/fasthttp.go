@@ -14,7 +14,6 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -73,8 +72,8 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, error) {
 	output := bytebufferpool.Get()
 	output.WriteString(`{`)
-	output.WriteString(`"raw_data":`)
-	queryParamsToMapJson(output, ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&')
+	output.WriteString(`"raw_data": {}`)
+	///queryParamsToMapJson(output, ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&')
 	output.WriteString(`written_at:"`)
 	output.WriteString(time.Now().Format(time.RFC3339Nano))
 	output.WriteString(`"`)
@@ -107,38 +106,4 @@ func queryParamsToMapJson(output *bytebufferpool.ByteBuffer, b []byte, kvSep, pa
 	}
 
 	output.WriteString(`"}`)
-}
-
-func headersToMap(b []byte, kvSep, paramSep byte) map[string]string {
-	var k, v strings.Builder
-	output := map[string]string{}
-
-	currentWriter := &k
-
-	for _, c := range b {
-		if c == kvSep {
-			currentWriter = &v
-			continue
-		}
-		if c == '\r' {
-			continue
-		}
-		if c == paramSep {
-			if k.Len() > 0 {
-				output[k.String()] = v.String()
-				k.Reset()
-				v.Reset()
-			}
-			currentWriter = &k
-			continue
-		}
-		if currentWriter.Len() == 0 && currentWriter == &v && c == ' ' {
-			continue
-		}
-		currentWriter.WriteByte(c)
-	}
-	if k.Len() > 0 {
-		output[k.String()] = v.String()
-	}
-	return output
 }
