@@ -1,7 +1,7 @@
 package drivers
 
 import (
-	"github.com/klauspost/compress/s2"
+	"github.com/klauspost/compress/zlib"
 	"io"
 	"os"
 	"strconv"
@@ -18,7 +18,7 @@ type Compressor struct {
 
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
-	gw := s2.NewWriter(orig, s2.WriterBestCompression())
+	gw, _ := zlib.NewWriterLevel(orig, lvl)
 	return &Compressor{
 		origWriter: orig,
 		w:          gw,
