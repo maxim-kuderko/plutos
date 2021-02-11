@@ -24,7 +24,7 @@ func NewGzipper(w func() Driver) (Driver, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = gw.SetConcurrency(5<<20, numCpus)
+	err = gw.SetConcurrency(5<<20, numCpus+6)
 	if err != nil {
 		return nil, err
 	}
