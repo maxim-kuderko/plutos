@@ -85,8 +85,8 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 func EventFromRoutingCtxGET(ctx *routing.Context) (plutos.Event, error) {
 	return plutos.Event{
 		//RawData:    ctx.Request.URI().QueryString(),
-		Enrichment: getEnrichment(ctx),
-		Metadata:   generateMetadata(),
+		//Enrichment: getEnrichment(ctx),
+		//Metadata:   generateMetadata(),
 	}, nil
 }
 
