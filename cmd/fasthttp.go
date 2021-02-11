@@ -86,7 +86,7 @@ func EventFromRoutingCtxGET(ctx *routing.Context) (plutos.Event, error) {
 	return plutos.Event{
 		RawData:    queryParamsToMapJson(ctx.Request.URI().QueryString(), '=', '&'),
 		Enrichment: getEnrichment(ctx),
-		//Metadata:   generateMetadata(),
+		Metadata:   generateMetadata(),
 	}, nil
 }
 
