@@ -2,7 +2,7 @@ package drivers
 
 import (
 	"bufio"
-	"github.com/klauspost/pgzip"
+	"github.com/golang/snappy"
 	"io"
 	"os"
 	"strconv"
@@ -21,7 +21,7 @@ type Compressor struct {
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
 	buff := bufio.NewWriterSize(orig, 1<<20)
-	gw, _ := pgzip.NewWriterLevel(buff, lvl)
+	gw := snappy.NewBufferedWriter(orig)
 	return &Compressor{
 		origWriter: orig,
 		buff:       buff,
