@@ -1,7 +1,7 @@
 package drivers
 
 import (
-	"github.com/klauspost/pgzip"
+	"github.com/golang/snappy"
 	"io"
 	"os"
 	"strconv"
@@ -18,7 +18,7 @@ type Compressor struct {
 
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
-	gw, _ := pgzip.NewWriterLevel(orig, lvl)
+	gw := snappy.NewBufferedWriter(orig)
 	return &Compressor{
 		origWriter: orig,
 		w:          gw,
