@@ -32,8 +32,8 @@ func main() {
 
 	go func() {
 		srv := fasthttp.Server{
-			Handler:                       router.HandleRequest,
-			TCPKeepalive:                  true,
+			Handler: router.HandleRequest,
+			//TCPKeepalive:                  true,
 			NoDefaultServerHeader:         true,
 			NoDefaultDate:                 true,
 			NoDefaultContentType:          true,
