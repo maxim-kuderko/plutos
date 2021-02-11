@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos"
 	"github.com/maxim-kuderko/plutos/drivers"
 	"github.com/qiangxue/fasthttp-routing"
@@ -59,57 +58,34 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 
 	router.Get("/e", func(c *routing.Context) error {
 		e, err := EventFromRoutingCtxGET(c)
+		defer bytebufferpool.Put(e)
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
+			return err
 		}
-
-		if jsoniter.ConfigFastest.NewEncoder(w).Encode(e) != nil {
-			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
-		}
-		return nil
-	})
-
-	router.Post("/e", func(c *routing.Context) error {
-		e, err := EventFromRoutingCtxPOST(c)
-		if err != nil {
-			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
-		}
-		if jsoniter.ConfigFastest.NewEncoder(w).Encode(e) != nil {
+		if _, err = e.WriteTo(w); err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
 		}
 		return nil
 	})
 }
 
-func EventFromRoutingCtxGET(ctx *routing.Context) (plutos.Event, error) {
-	return plutos.Event{
-		RawData:    queryParamsToMapJson(ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&'),
-		Enrichment: getEnrichment(ctx),
-		Metadata:   generateMetadata(),
-	}, nil
-}
+func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, error) {
+	output := bytebufferpool.Get()
+	output.WriteString(`{`)
+	output.WriteString(`"raw_data":`)
+	queryParamsToMapJson(output, ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&')
+	output.WriteString(`written_at:"`)
+	output.WriteString(time.Now().Format(time.RFC3339Nano))
+	output.WriteString(`"`)
+	output.WriteString(`}`)
 
-func getEnrichment(ctx *routing.Context) plutos.Enrichment {
-	return plutos.Enrichment{}
-}
-
-func generateMetadata() plutos.Metadata {
-	return plutos.Metadata{WrittenAt: time.Now().Format(time.RFC3339Nano)}
-}
-
-func EventFromRoutingCtxPOST(ctx *routing.Context) (plutos.Event, error) {
-	return plutos.Event{
-		RawData:    ctx.Request.Body(),
-		Enrichment: getEnrichment(ctx),
-		Metadata:   generateMetadata(),
-	}, nil
+	return output, nil
 }
 
 var empty = json.RawMessage("{}")
 
-func queryParamsToMapJson(b []byte, kvSep, paramSep byte) json.RawMessage {
-	output := bytebufferpool.Get()
-	defer bytebufferpool.Put(output)
+func queryParamsToMapJson(output *bytebufferpool.ByteBuffer, b []byte, kvSep, paramSep byte) {
 	output.WriteString(`{`)
 	isSTart := true
 	for _, c := range b {
