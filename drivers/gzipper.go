@@ -1,7 +1,8 @@
 package drivers
 
 import (
-	"github.com/klauspost/compress/zlib"
+	"bufio"
+	"github.com/klauspost/pgzip"
 	"io"
 	"os"
 	"strconv"
@@ -13,14 +14,17 @@ var (
 
 type Compressor struct {
 	origWriter Driver
+	buff       *bufio.Writer
 	w          io.WriteCloser
 }
 
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
-	gw, _ := zlib.NewWriterLevel(orig, lvl)
+	buff := bufio.NewWriterSize(orig, 10<<20)
+	gw, _ := pgzip.NewWriterLevel(buff, lvl)
 	return &Compressor{
 		origWriter: orig,
+		buff:       buff,
 		w:          gw,
 	}, nil
 }
@@ -33,5 +37,9 @@ func (g *Compressor) Close() error {
 	if err := g.w.Close(); err != nil {
 		return err
 	}
+	if err := g.buff.Flush(); err != nil {
+		return err
+	}
+
 	return g.origWriter.Close()
 }
