@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos"
@@ -8,7 +9,6 @@ import (
 	"github.com/qiangxue/fasthttp-routing"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/atomic"
 	"net/http"
@@ -57,7 +57,7 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 		return nil
 	})
 
-	router.Get("/e", func(c *routing.Context) error {
+	router.Get("/e/<data>", func(c *routing.Context) error {
 		e, err := EventFromRoutingCtxGET(c)
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
@@ -82,8 +82,12 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 }
 
 func EventFromRoutingCtxGET(ctx *routing.Context) (plutos.Event, error) {
+	data, err := base64.StdEncoding.DecodeString(ctx.Param(`data`))
+	if err != nil {
+		return plutos.Event{}, err
+	}
 	return plutos.Event{
-		RawData:    queryParamsToMapJson(ctx.Request.URI().QueryString(), '=', '&'),
+		RawData:    data,
 		Enrichment: getEnrichment(ctx),
 		Metadata:   generateMetadata(),
 	}, nil
@@ -106,35 +110,6 @@ func EventFromRoutingCtxPOST(ctx *routing.Context) (plutos.Event, error) {
 }
 
 var empty = json.RawMessage("{}")
-
-func queryParamsToMapJson(b []byte, kvSep, paramSep byte) json.RawMessage {
-	output := bytebufferpool.Get()
-	defer bytebufferpool.Put(output)
-	output.WriteString(`{`)
-	isSTart := true
-	for _, c := range b {
-		if isSTart {
-			output.WriteByte('"')
-			isSTart = false
-		}
-		if c == kvSep {
-			output.WriteString(`":`)
-			isSTart = true
-			continue
-		}
-		if c == paramSep {
-			output.WriteString(`",`)
-			isSTart = true
-			continue
-		}
-		output.WriteByte(c)
-	}
-	if output.Len() == 0 {
-		return empty
-	}
-	output.WriteString(`"}`)
-	return output.Bytes()
-}
 
 func headersToMap(b []byte, kvSep, paramSep byte) map[string]string {
 	var k, v strings.Builder
