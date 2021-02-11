@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos"
@@ -63,7 +64,7 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}
 
-		if jsoniter.ConfigFastest.NewEncoder(w).Encode(e) != nil {
+		if gob.NewEncoder(w).Encode(e) != nil {
 			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
 		}
 		return nil
