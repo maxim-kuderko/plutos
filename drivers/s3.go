@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
@@ -71,11 +72,12 @@ func validateInitialSettings() {
 func (so *S3) newUploader() (io.WriteCloser, error) {
 	r, w := io.Pipe()
 	so.wg.Add(1)
-	go so.upload(r)
+	bufferReader := bufio.NewReaderSize(r, 4<<20)
+	go so.upload(bufferReader)
 	return w, nil
 }
 
-func (so *S3) upload(r *io.PipeReader) {
+func (so *S3) upload(r io.Reader) {
 	defer so.wg.Done()
 	t := time.Now()
 	key := fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s`, dataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String())
