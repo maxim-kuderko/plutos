@@ -72,7 +72,7 @@ func validateInitialSettings() {
 func (so *S3) newUploader() (io.WriteCloser, error) {
 	r, w := io.Pipe()
 	so.wg.Add(1)
-	bufferReader := bufio.NewReaderSize(r, 4<<20)
+	bufferReader := bufio.NewReaderSize(r, 10<<20)
 	go so.upload(bufferReader)
 	return w, nil
 }
