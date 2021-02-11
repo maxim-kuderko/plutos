@@ -105,11 +105,8 @@ func queryParamsToMapJson(output *bytebufferpool.ByteBuffer, b []byte, kvSep, pa
 		}
 		output.WriteByte(c)
 	}
-	if output.Len() == 0 {
-		return empty
-	}
+
 	output.WriteString(`"}`)
-	return output.Bytes()
 }
 
 func headersToMap(b []byte, kvSep, paramSep byte) map[string]string {
