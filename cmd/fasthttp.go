@@ -62,10 +62,8 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}
-		buff := bytebufferpool.Get()
-		defer bytebufferpool.Put(buff)
-		jsoniter.ConfigFastest.NewEncoder(w).Encode(e)
-		if _, err = w.Write(buff.Bytes()); err != nil {
+
+		if jsoniter.ConfigFastest.NewEncoder(w).Encode(e) != nil {
 			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
 		}
 		return nil
