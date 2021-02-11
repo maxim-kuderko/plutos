@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos"
 	"github.com/maxim-kuderko/plutos/drivers"
@@ -15,6 +16,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -75,17 +77,17 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 func EventFromRoutingCtxGET(ctx *routing.Context) (plutos.Event, error) {
 	return plutos.Event{
 		//RawData:    queryParamsToMapJson(ctx.Request.URI().QueryString(), '=', '&'),
-		//Enrichment: getEnrichment(ctx),
-		//Metadata:   generateMetadata(),
+		Enrichment: getEnrichment(ctx),
+		Metadata:   generateMetadata(),
 	}, nil
 }
 
 func getEnrichment(ctx *routing.Context) plutos.Enrichment {
-	return plutos.Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')}
+	return plutos.Enrichment{}
 }
 
 func generateMetadata() plutos.Metadata {
-	return plutos.Metadata{ /*WrittenAt: time.Now().Format(time.RFC3339), RequestID: uuid.New().String()*/ }
+	return plutos.Metadata{WrittenAt: time.Now().Format(time.RFC3339), RequestID: uuid.New().String()}
 }
 
 func EventFromRoutingCtxPOST(ctx *routing.Context) (plutos.Event, error) {
