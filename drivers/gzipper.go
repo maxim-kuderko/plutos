@@ -1,9 +1,9 @@
 package drivers
 
 import (
-	"github.com/klauspost/pgzip"
+	"github.com/klauspost/compress/snappy"
+	"io"
 	"os"
-	"runtime"
 	"strconv"
 )
 
@@ -11,34 +11,25 @@ var (
 	lvl, _ = strconv.Atoi(os.Getenv(`GZIP_LVL`))
 )
 
-type gzipper struct {
+type Compressor struct {
 	origWriter Driver
-	w          *pgzip.Writer
+	w          io.WriteCloser
 }
 
-var numCpus = runtime.GOMAXPROCS(0)
-
-func NewGzipper(w func() Driver) (Driver, error) {
+func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
-	gw, err := pgzip.NewWriterLevel(orig, lvl)
-	if err != nil {
-		return nil, err
-	}
-	err = gw.SetConcurrency(5<<20, numCpus+6)
-	if err != nil {
-		return nil, err
-	}
-	return &gzipper{
+	gw := snappy.NewBufferedWriter(orig)
+	return &Compressor{
 		origWriter: orig,
 		w:          gw,
 	}, nil
 }
 
-func (g *gzipper) Write(b []byte) (int, error) {
+func (g *Compressor) Write(b []byte) (int, error) {
 	return g.w.Write(b)
 }
 
-func (g *gzipper) Close() error {
+func (g *Compressor) Close() error {
 	if err := g.w.Close(); err != nil {
 		return err
 	}
