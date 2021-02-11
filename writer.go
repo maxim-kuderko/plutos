@@ -66,8 +66,8 @@ func (w *Writer) flush() {
 }
 
 func (w *Writer) Write(b []byte) (n int, err error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+	/*w.mu.Lock()
+	defer w.mu.Unlock()*/
 	/*defer func() {
 		if err == nil {
 			w.currentSize++
