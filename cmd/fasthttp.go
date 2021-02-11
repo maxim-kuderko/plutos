@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -74,12 +75,12 @@ var ft = fastime.New()
 
 func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, error) {
 	output := bytebufferpool.Get()
-	/*	output.WriteString(`{`)
-		output.WriteString(`"raw_data": `)
-		queryParamsToMapJson(output, ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&')
-		output.WriteString(`written_at:"`)
-		//output.WriteString(ft.Now().Format(time.RFC3339Nano))
-		output.WriteString(`"`)*/
+	output.WriteString(`{`)
+	output.WriteString(`"raw_data": `)
+	queryParamsToMapJson(output, ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&')
+	output.WriteString(`written_at:"`)
+	output.WriteString(ft.Now().Format(time.RFC3339Nano))
+	output.WriteString(`"`)
 	output.WriteString(`}`)
 
 	return output, nil
