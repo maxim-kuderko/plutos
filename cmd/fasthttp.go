@@ -1,7 +1,9 @@
 package main
 
 import (
-	"crypto/sha256"
+	"crypto/md5"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"github.com/kpango/fastime"
 	"github.com/maxim-kuderko/plutos"
@@ -11,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
+	"github.com/valyala/fastrand"
 	"go.uber.org/atomic"
 	"hash"
 	"net/http"
@@ -77,12 +80,13 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 var ft = fastime.New()
 
 var hasherPool = sync.Pool{New: func() interface{} {
-	return sha256.New()
+	return md5.New()
 }}
 
 func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, error) {
 	output := bytebufferpool.Get()
 	hasher := hasherPool.Get().(hash.Hash)
+	binary.Write(hasher, binary.LittleEndian, fastrand.Uint32())
 	defer func() {
 		hasher.Reset()
 		hasherPool.Put(hasher)
@@ -97,9 +101,9 @@ func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, e
 
 	output.WriteTo(hasher)
 
-	output.Write(hasher.Sum(nil))
+	output.WriteString(hex.EncodeToString(hasher.Sum(nil)))
 
-	output.WriteString(`",`)
+	output.WriteString(`"`)
 
 	output.WriteString(`}`)
 
