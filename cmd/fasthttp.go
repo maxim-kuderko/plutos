@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/kpango/fastime"
 	"github.com/maxim-kuderko/plutos"
 	"github.com/maxim-kuderko/plutos/drivers"
 	"github.com/qiangxue/fasthttp-routing"
@@ -69,13 +70,15 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 	})
 }
 
+var ft = fastime.New()
+
 func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, error) {
 	output := bytebufferpool.Get()
 	output.WriteString(`{`)
 	output.WriteString(`"raw_data": `)
 	queryParamsToMapJson(output, ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&')
 	output.WriteString(`written_at:"`)
-	output.WriteString(time.Now().Format(time.RFC3339Nano))
+	output.WriteString(ft.Now().Format(time.RFC3339Nano))
 	output.WriteString(`"`)
 	output.WriteString(`}`)
 
