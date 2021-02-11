@@ -66,15 +66,15 @@ func (w *Writer) flush() {
 }
 
 func (w *Writer) Write(b []byte) (n int, err error) {
-	w.mu.Lock()
+	/*w.mu.Lock()
 	defer w.mu.Unlock()
 	defer func() {
 		if err == nil {
 			w.currentSize++
 		}
 	}()
-	return w.driver.Write(b)
-
+	return w.driver.Write(b)*/
+	return 0, err
 }
 
 func (w *Writer) Close() error {
