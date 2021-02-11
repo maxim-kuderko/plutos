@@ -5,9 +5,9 @@ import (
 	"github.com/kpango/fastime"
 	"github.com/maxim-kuderko/plutos"
 	"github.com/maxim-kuderko/plutos/drivers"
+	"github.com/qiangxue/fasthttp-routing"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/savsgio/gotils"
 	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/atomic"
@@ -26,19 +26,19 @@ func main() {
 	healthy := atomic.NewBool(true)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	router := routing.New()
 	writer := plutos.NewWriter(drivers.FetchDriver())
-	handler := defineRoutes(healthy, writer)
+	defineRoutes(router, healthy, writer)
 
 	go func() {
 		srv := fasthttp.Server{
-			Handler:                       handler,
-			TCPKeepalive:                  true,
-			NoDefaultServerHeader:         true,
-			NoDefaultDate:                 true,
-			NoDefaultContentType:          true,
-			DisableHeaderNamesNormalizing: true,
-			ReadBufferSize:                64 * 1024,
-			WriteBufferSize:               64 * 1024,
+			Handler:               router.HandleRequest,
+			TCPKeepalive:          true,
+			NoDefaultServerHeader: true,
+			NoDefaultDate:         true,
+			NoDefaultContentType:  true,
+			ReadBufferSize:        64 * 1024,
+			WriteBufferSize:       64 * 1024,
 		}
 		log.Err(srv.ListenAndServe(os.Getenv(`PORT`)))
 	}()
@@ -47,45 +47,31 @@ func main() {
 
 }
 
-func health(health *atomic.Bool) func(ctx *fasthttp.RequestCtx) {
-	return func(ctx *fasthttp.RequestCtx) {
-		if !health.Load() {
-			ctx.Response.SetStatusCode(fasthttp.StatusInternalServerError)
-		}
-	}
-}
+func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer) {
+	router.Get("/health", func(c *routing.Context) error {
+		/*if !healthy.Load() {
+			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
+		}*/
+		return nil
+	})
 
-func get(w *plutos.Writer) func(ctx *fasthttp.RequestCtx) {
-	return func(ctx *fasthttp.RequestCtx) {
-		e, err := EventFromRoutingCtxGET(ctx)
+	router.Get("/e", func(c *routing.Context) error {
+		e, err := EventFromRoutingCtxGET(c)
 		defer bytebufferpool.Put(e)
 		if err != nil {
-			ctx.Response.SetStatusCode(fasthttp.StatusBadRequest)
-			return
+			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
+			return err
 		}
 		if _, err = e.WriteTo(w); err != nil {
-			ctx.Response.SetStatusCode(fasthttp.StatusInternalServerError)
+			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
 		}
-		return
-	}
-}
-
-func defineRoutes(healthy *atomic.Bool, w *plutos.Writer) func(ctx *fasthttp.RequestCtx) {
-	return func(ctx *fasthttp.RequestCtx) {
-		switch gotils.B2S(ctx.Path()) {
-		case "/health":
-			health(healthy)(ctx)
-		case "/e":
-			get(w)(ctx)
-		default:
-			ctx.Error(fasthttp.StatusMessage(fasthttp.StatusNotFound), fasthttp.StatusNotFound)
-		}
-	}
+		return nil
+	})
 }
 
 var ft = fastime.New()
 
-func EventFromRoutingCtxGET(ctx *fasthttp.RequestCtx) (*bytebufferpool.ByteBuffer, error) {
+func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, error) {
 	output := bytebufferpool.Get()
 	output.WriteString(`{`)
 	output.WriteString(`"raw_data": `)
