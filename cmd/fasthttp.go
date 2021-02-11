@@ -16,7 +16,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 )
 
 func main() {
@@ -78,7 +77,7 @@ func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, e
 	output.WriteString(`"raw_data": `)
 	queryParamsToMapJson(output, ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&')
 	output.WriteString(`written_at:"`)
-	output.WriteString(ft.Now().Format(time.RFC3339Nano))
+	//output.WriteString(ft.Now().Format(time.RFC3339Nano))
 	output.WriteString(`"`)
 	output.WriteString(`}`)
 
