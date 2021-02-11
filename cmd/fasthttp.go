@@ -31,13 +31,14 @@ func main() {
 
 	go func() {
 		srv := fasthttp.Server{
-			Handler:               handler,
-			TCPKeepalive:          true,
-			NoDefaultServerHeader: true,
-			NoDefaultDate:         true,
-			NoDefaultContentType:  true,
-			ReadBufferSize:        64 * 1024,
-			WriteBufferSize:       64 * 1024,
+			Handler:                       handler,
+			TCPKeepalive:                  true,
+			NoDefaultServerHeader:         true,
+			NoDefaultDate:                 true,
+			NoDefaultContentType:          true,
+			DisableHeaderNamesNormalizing: true,
+			ReadBufferSize:                64 * 1024,
+			WriteBufferSize:               64 * 1024,
 		}
 		log.Err(srv.ListenAndServe(os.Getenv(`PORT`)))
 	}()
