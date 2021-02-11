@@ -3,6 +3,7 @@ package drivers
 import (
 	"github.com/klauspost/pgzip"
 	"os"
+	"runtime"
 	"strconv"
 )
 
@@ -15,9 +16,15 @@ type gzipper struct {
 	w          *pgzip.Writer
 }
 
+var numCpus = runtime.GOMAXPROCS(0)
+
 func NewGzipper(w func() Driver) (Driver, error) {
 	orig := w()
 	gw, err := pgzip.NewWriterLevel(orig, lvl)
+	if err != nil {
+		return nil, err
+	}
+	err = gw.SetConcurrency(5<<20, numCpus)
 	if err != nil {
 		return nil, err
 	}
