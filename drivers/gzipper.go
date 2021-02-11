@@ -19,6 +19,7 @@ type Compressor struct {
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
 	gw, _ := pgzip.NewWriterLevel(orig, lvl)
+	gw.SetConcurrency(2<<20, 40)
 	return &Compressor{
 		origWriter: orig,
 		w:          gw,
