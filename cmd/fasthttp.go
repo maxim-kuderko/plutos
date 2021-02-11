@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos"
@@ -12,7 +11,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/reuseport"
 	"go.uber.org/atomic"
 	"net/http"
 	_ "net/http/pprof"
@@ -36,18 +34,16 @@ func main() {
 	defineRoutes(router, healthy, writer)
 
 	go func() {
-		ln, err := reuseport.Listen("tcp4", fmt.Sprintf("0.0.0.0%s", os.Getenv(`PORT`)))
-		if err != nil {
-			panic(fmt.Sprintf("error in reuseport listener: %s", err))
-		}
 		srv := fasthttp.Server{
 			Handler:               router.HandleRequest,
 			TCPKeepalive:          true,
 			NoDefaultServerHeader: true,
 			NoDefaultDate:         true,
 			NoDefaultContentType:  true,
+			ReadBufferSize:        64 * 1024,
+			WriteBufferSize:       64 * 1024,
 		}
-		log.Err(srv.Serve(ln))
+		log.Err(srv.ListenAndServe(os.Getenv(`PORT`)))
 	}()
 	<-c
 	writer.Close()
