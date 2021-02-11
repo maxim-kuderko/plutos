@@ -71,9 +71,9 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, error) {
 	output := bytebufferpool.Get()
 	output.WriteString(`{`)
-	output.WriteString(`"raw_data": {}`)
-	/*queryParamsToMapJson(output, ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&')
-	output.WriteString(`written_at:"`)
+	output.WriteString(`"raw_data": `)
+	queryParamsToMapJson(output, ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&')
+	/*output.WriteString(`written_at:"`)
 	output.WriteString(time.Now().Format(time.RFC3339Nano))
 	output.WriteString(`"`)*/
 	output.WriteString(`}`)
