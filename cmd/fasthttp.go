@@ -59,7 +59,7 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 	})
 
 	router.Get("/e", func(c *routing.Context) error {
-		e, err := EventFromRoutingCtxGET(c)
+		_, err := EventFromRoutingCtxGET(c)
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}
@@ -84,8 +84,8 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 
 func EventFromRoutingCtxGET(ctx *routing.Context) (plutos.Event, error) {
 	return plutos.Event{
-		RawData: ctx.Request.URI().QueryString(),
-		//Enrichment: getEnrichment(ctx),
+		RawData:    ctx.Request.URI().QueryString(),
+		Enrichment: getEnrichment(ctx),
 		//Metadata:   generateMetadata(),
 	}, nil
 }
