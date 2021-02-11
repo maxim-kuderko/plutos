@@ -52,21 +52,21 @@ func main() {
 
 func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer) {
 	router.Get("/health", func(c *routing.Context) error {
-		/*		if !healthy.Load() {
-				c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
-			}*/
+		if !healthy.Load() {
+			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
+		}
 		return nil
 	})
 
 	router.Get("/e", func(c *routing.Context) error {
-		_, err := EventFromRoutingCtxGET(c)
+		e, err := EventFromRoutingCtxGET(c)
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}
-		/*
-			if jsoniter.ConfigFastest.NewEncoder(w).Encode(e) != nil {
-				c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
-			}*/
+
+		if jsoniter.ConfigFastest.NewEncoder(w).Encode(e) != nil {
+			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
+		}
 		return nil
 	})
 
