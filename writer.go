@@ -1,6 +1,7 @@
 package plutos
 
 import (
+	"bytes"
 	"github.com/maxim-kuderko/plutos/drivers"
 	"os"
 	"strconv"
@@ -13,8 +14,9 @@ type Writer struct {
 	newDriver   func() drivers.Driver
 	driver      drivers.Driver
 
-	mu sync.Mutex
-	wg sync.WaitGroup
+	buffers []*bytes.Buffer
+	mu      sync.Mutex
+	wg      sync.WaitGroup
 }
 
 var (
@@ -31,6 +33,7 @@ func NewWriter(d func() drivers.Driver) *Writer {
 		}
 		selectedDriver = compressed
 	}
+
 	w := &Writer{driver: selectedDriver(), newDriver: selectedDriver}
 	go w.periodicFlush()
 	return w
@@ -66,13 +69,13 @@ func (w *Writer) flush() {
 }
 
 func (w *Writer) Write(b []byte) (n int, err error) {
-	/*		w.mu.Lock()
-			defer w.mu.Unlock()
-			defer func() {
-				if err == nil {
-					w.currentSize++
-				}
-			}()*/
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	defer func() {
+		if err == nil {
+			w.currentSize++
+		}
+	}()
 	return w.driver.Write(b)
 }
 
