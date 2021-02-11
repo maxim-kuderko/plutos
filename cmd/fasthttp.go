@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
@@ -10,6 +9,7 @@ import (
 	"github.com/qiangxue/fasthttp-routing"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/atomic"
 	"os"
@@ -76,7 +76,7 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 
 func EventFromRoutingCtxGET(ctx *routing.Context) (plutos.Event, error) {
 	return plutos.Event{
-		//RawData:    queryParamsToMapJson(ctx.Request.URI().QueryString(), '=', '&'),
+		RawData:    queryParamsToMapJson(ctx.Request.URI().QueryString(), '=', '&'),
 		Enrichment: getEnrichment(ctx),
 		Metadata:   generateMetadata(),
 	}, nil
@@ -101,7 +101,8 @@ func EventFromRoutingCtxPOST(ctx *routing.Context) (plutos.Event, error) {
 var empty = json.RawMessage("{}")
 
 func queryParamsToMapJson(b []byte, kvSep, paramSep byte) json.RawMessage {
-	output := bytes.NewBuffer(nil)
+	output := bytebufferpool.Get()
+	defer bytebufferpool.Put(output)
 	output.WriteString(`{`)
 	isSTart := true
 	for _, c := range b {
