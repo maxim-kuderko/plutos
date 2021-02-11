@@ -59,14 +59,15 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 	})
 
 	router.Get("/e", func(c *routing.Context) error {
-		e, err := EventFromRoutingCtxGET(c)
+		return nil
+		/*e, err := EventFromRoutingCtxGET(c)
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}
 		if jsoniter.ConfigFastest.NewEncoder(w).Encode(e) != nil {
 			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
 		}
-		return nil
+		return nil*/
 	})
 
 	router.Post("/e", func(c *routing.Context) error {
