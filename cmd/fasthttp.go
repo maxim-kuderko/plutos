@@ -52,9 +52,9 @@ func main() {
 
 func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer) {
 	router.Get("/health", func(c *routing.Context) error {
-		if !healthy.Load() {
-			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
-		}
+		/*		if !healthy.Load() {
+				c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
+			}*/
 		return nil
 	})
 
