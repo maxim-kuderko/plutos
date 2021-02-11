@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/kpango/fastime"
 	"github.com/maxim-kuderko/plutos"
 	"github.com/maxim-kuderko/plutos/drivers"
@@ -80,6 +81,9 @@ func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, e
 	queryParamsToMapJson(output, ctx.Request.URI().QueryArgs().Peek(`e`), '=', '&')
 	output.WriteString(`written_at:"`)
 	output.WriteString(ft.Now().Format(time.RFC3339Nano))
+	output.WriteString(`",`)
+	output.WriteString(`request_id:"`)
+	output.WriteString(uuid.New().String())
 	output.WriteString(`"`)
 	output.WriteString(`}`)
 
