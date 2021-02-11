@@ -59,7 +59,7 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 	})
 
 	router.Get("/e", func(c *routing.Context) error {
-		_, err := EventFromRoutingCtxGET(c)
+		e, err := EventFromRoutingCtxGET(c)
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}
