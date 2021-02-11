@@ -20,7 +20,7 @@ type Compressor struct {
 
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
-	buff := bufio.NewWriterSize(orig, 1<<20)
+	buff := bufio.NewWriterSize(orig, 10<<20)
 	gw, _ := pgzip.NewWriterLevel(buff, lvl)
 	return &Compressor{
 		origWriter: orig,
