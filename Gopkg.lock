@@ -109,6 +109,14 @@
   version = "v1.2.5"
 
 [[projects]]
+  digest = "1:b8212ad835487c540d45507075cf05d6a366c7bc32dc49cf9067c84153f3732b"
+  name = "github.com/kpango/fastime"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "af81bb03cea1bce544b92d0d6af4ad417fb9c0f0"
+  version = "v1.0.16"
+
+[[projects]]
   digest = "1:33422d238f147d247752996a26574ac48dcf472976eda7f5134015f06bf16563"
   name = "github.com/modern-go/concurrent"
   packages = ["."]
@@ -154,25 +162,16 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:83551678e121c212a2e9d7c7b38b4fbec21d13d18b63fa684b063b9eee8f8bf4"
+  digest = "1:a57bc814d0e10622afddcab7b1628755acb8d3234b9d220a21392307dd3f74de"
   name = "github.com/valyala/fasthttp"
   packages = [
     ".",
     "fasthttputil",
-    "reuseport",
     "stackless",
   ]
   pruneopts = "UT"
   revision = "6234776e7cc4d66f235fc4814aace2c9b7099ce7"
   version = "v1.19.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:8507835fade46d48a94828b351e1f8fb83df1aa65ba1e67c9493b0a1b47abc73"
-  name = "github.com/valyala/tcplisten"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "ceec8f93295a060cdb565ec25e4ccf17941dbd55"
 
 [[projects]]
   digest = "1:7a3de4371d6b68c6f37a0df2c09905664d9de59026c91cbe275aae55f4fe760f"
@@ -181,17 +180,6 @@
   pruneopts = "UT"
   revision = "12f27ba2637fa0e13772a4f05fa46a5d18d53182"
   version = "v1.7.0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:6783992ece7bd635ef99415bd9527fdea83e3dba53bdd9d61150882c92bb412d"
-  name = "golang.org/x/sys"
-  packages = [
-    "internal/unsafeheader",
-    "windows",
-  ]
-  pruneopts = "UT"
-  revision = "22da62e12c0cd9c1da93581e1113ca4d82a5be14"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -204,12 +192,12 @@
     "github.com/google/uuid",
     "github.com/json-iterator/go",
     "github.com/klauspost/pgzip",
+    "github.com/kpango/fastime",
     "github.com/qiangxue/fasthttp-routing",
     "github.com/rs/zerolog",
     "github.com/rs/zerolog/log",
     "github.com/valyala/bytebufferpool",
     "github.com/valyala/fasthttp",
-    "github.com/valyala/fasthttp/reuseport",
     "go.uber.org/atomic",
   ]
   solver-name = "gps-cdcl"
