@@ -73,6 +73,7 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 		if _, err = e.WriteTo(w); err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
 		}
+		c.Response.SetStatusCode(fasthttp.StatusNoContent)
 		return nil
 	})
 }
