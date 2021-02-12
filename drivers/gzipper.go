@@ -1,7 +1,7 @@
 package drivers
 
 import (
-	"github.com/pierrec/lz4"
+	"github.com/klauspost/pgzip"
 	"io"
 	"os"
 	"runtime"
@@ -19,8 +19,8 @@ type Compressor struct {
 
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
-	gw := lz4.NewWriter(orig)
-	gw.WithConcurrency(runtime.NumCPU() * 2)
+	gw, _ := pgzip.NewWriterLevel(orig, lvl)
+	gw.SetConcurrency(1<<20, runtime.NumCPU()*2)
 	return &Compressor{
 		origWriter: orig,
 		w:          gw,
