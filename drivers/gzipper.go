@@ -1,7 +1,7 @@
 package drivers
 
 import (
-	"github.com/pierrec/lz4"
+	"github.com/klauspost/pgzip"
 	"io"
 	"os"
 	"strconv"
@@ -18,7 +18,7 @@ type Compressor struct {
 
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
-	gw := lz4.NewWriter(orig)
+	gw, _ := pgzip.NewWriterLevel(orig, lvl)
 	return &Compressor{
 		origWriter: orig,
 		w:          gw,
