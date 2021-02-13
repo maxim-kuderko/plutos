@@ -13,7 +13,7 @@ type compressor struct {
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
 	gw := lz4.NewWriter(orig)
-	gw.WithConcurrency(runtime.NumCPU() + 8)
+	gw.WithConcurrency(runtime.NumCPU() + 16)
 	return &compressor{
 		origWriter: orig,
 		w:          gw,
