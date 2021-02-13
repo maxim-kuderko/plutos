@@ -15,7 +15,6 @@ import (
 	"github.com/valyala/fastrand"
 	"go.uber.org/atomic"
 	"hash"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
@@ -25,9 +24,6 @@ import (
 )
 
 func main() {
-	go func() {
-		http.ListenAndServe("localhost:6060", nil)
-	}()
 	log.Logger = zerolog.New(os.Stderr).With().Timestamp().Logger().Level(zerolog.ErrorLevel)
 	healthy := atomic.NewBool(true)
 	c := make(chan os.Signal, 1)
