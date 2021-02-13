@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"crypto/md5"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
-	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos"
 	"github.com/maxim-kuderko/plutos/drivers"
@@ -11,12 +13,15 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
+	"github.com/valyala/fastrand"
 	"go.uber.org/atomic"
+	"hash"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -83,7 +88,7 @@ func EventFromRoutingCtxGET(ctx *routing.Context) (plutos.Event, error) {
 	return plutos.Event{
 		RawData:    queryParamsToMapJson(ctx.Request.URI().QueryString(), '=', '&'),
 		Enrichment: getEnrichment(ctx),
-		Metadata:   generateMetadata(),
+		Metadata:   generateMetadata(ctx.Request.URI().QueryString()),
 	}, nil
 }
 
@@ -91,15 +96,26 @@ func getEnrichment(ctx *routing.Context) plutos.Enrichment {
 	return plutos.Enrichment{Headers: headersToMap(ctx.Request.Header.Header(), ':', '\n')}
 }
 
-func generateMetadata() plutos.Metadata {
-	return plutos.Metadata{WrittenAt: time.Now().Format(time.RFC3339), RequestID: uuid.New().String()}
+var hasherPool = sync.Pool{New: func() interface{} {
+	return md5.New()
+}}
+
+func generateMetadata(data []byte) plutos.Metadata {
+	h := hasherPool.Get().(hash.Hash)
+	defer func() {
+		h.Reset()
+		hasherPool.Put(h)
+	}()
+	binary.Write(h, binary.LittleEndian, fastrand.Uint32())
+	h.Write(data)
+	return plutos.Metadata{WrittenAt: time.Now().Format(time.RFC3339), RequestID: hex.EncodeToString(h.Sum(nil))}
 }
 
 func EventFromRoutingCtxPOST(ctx *routing.Context) (plutos.Event, error) {
 	return plutos.Event{
 		RawData:    ctx.Request.Body(),
 		Enrichment: getEnrichment(ctx),
-		Metadata:   generateMetadata(),
+		Metadata:   generateMetadata(ctx.Request.Body()),
 	}, nil
 }
 
