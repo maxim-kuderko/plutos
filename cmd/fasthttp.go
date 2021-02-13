@@ -12,6 +12,7 @@ import (
 	"github.com/qiangxue/fasthttp-routing"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastrand"
 	"go.uber.org/atomic"
@@ -66,7 +67,12 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 		}
-		if jsoniter.ConfigFastest.NewEncoder(w).Encode(e) != nil {
+		buff := bytebufferpool.Get()
+		defer bytebufferpool.Put(buff)
+		if jsoniter.ConfigFastest.NewEncoder(buff).Encode(e) != nil {
+			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
+		}
+		if _, err := buff.WriteTo(w); err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusInternalServerError)
 		}
 		return nil
