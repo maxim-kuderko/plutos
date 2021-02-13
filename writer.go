@@ -26,7 +26,7 @@ func NewWriter(d func() drivers.Driver) *Writer {
 	selectedDriver := d
 	if enableGzip == `true` {
 		compressed := func() drivers.Driver {
-			t, _ := drivers.NewGzipper(d)
+			t, _ := drivers.NewCompressor(d)
 			return t
 		}
 		selectedDriver = compressed

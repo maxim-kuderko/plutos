@@ -1,37 +1,28 @@
 package drivers
 
 import (
-	"github.com/klauspost/pgzip"
-	"os"
-	"strconv"
+	"github.com/pierrec/lz4"
 )
 
-var (
-	lvl, _ = strconv.Atoi(os.Getenv(`GZIP_LVL`))
-)
-
-type gzipper struct {
+type compressor struct {
 	origWriter Driver
-	w          *pgzip.Writer
+	w          Driver
 }
 
-func NewGzipper(w func() Driver) (Driver, error) {
+func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
-	gw, err := pgzip.NewWriterLevel(orig, lvl)
-	if err != nil {
-		return nil, err
-	}
-	return &gzipper{
+	gw := lz4.NewWriter(orig)
+	return &compressor{
 		origWriter: orig,
 		w:          gw,
 	}, nil
 }
 
-func (g *gzipper) Write(b []byte) (int, error) {
+func (g *compressor) Write(b []byte) (int, error) {
 	return g.w.Write(b)
 }
 
-func (g *gzipper) Close() error {
+func (g *compressor) Close() error {
 	if err := g.w.Close(); err != nil {
 		return err
 	}
