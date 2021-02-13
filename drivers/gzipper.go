@@ -2,6 +2,7 @@ package drivers
 
 import (
 	"github.com/pierrec/lz4"
+	"runtime"
 )
 
 type compressor struct {
@@ -12,6 +13,7 @@ type compressor struct {
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
 	gw := lz4.NewWriter(orig)
+	gw.WithConcurrency(runtime.NumCPU() + 8)
 	return &compressor{
 		origWriter: orig,
 		w:          gw,
