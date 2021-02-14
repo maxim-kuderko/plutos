@@ -131,6 +131,7 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+	tester.Close()
 	time.Sleep(time.Second * (time.Duration(maxTime) + 2))
 
 	r := lz4.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
