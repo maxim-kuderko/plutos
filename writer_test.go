@@ -2,10 +2,10 @@ package plutos
 
 import (
 	"bytes"
-	"compress/gzip"
 	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos/drivers"
+	"github.com/pierrec/lz4"
 	"io/ioutil"
 	"strings"
 	"sync"
@@ -100,11 +100,7 @@ func TestWriter_ConcurrentMultiWriteGZIP(t *testing.T) {
 	wg.Wait()
 	tester.Close()
 
-	r, err := gzip.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-	}
+	r := lz4.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
 	data, _ := ioutil.ReadAll(r)
 	if len(strings.Split(string(data), "\n")) != times+1 {
 		fmt.Println(len(strings.Split(string(data), "\n")))
@@ -137,11 +133,7 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 	wg.Wait()
 	time.Sleep(time.Second * (time.Duration(maxTime) + 2))
 
-	r, err := gzip.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-	}
+	r := lz4.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
 	data, _ := ioutil.ReadAll(r)
 	if len(strings.Split(string(data), "\n")) != times+1 {
 		fmt.Println(len(strings.Split(string(data), "\n")))
