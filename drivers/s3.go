@@ -21,6 +21,8 @@ type S3 struct {
 	uploader    *s3manager.Uploader
 	w           io.WriteCloser
 	wg          sync.WaitGroup
+
+	enableCompression bool
 }
 
 var (
@@ -30,7 +32,7 @@ var (
 	sqsQueue   = os.Getenv(`SQS_QUEUE`)
 )
 
-func NewS3() Driver {
+func NewS3(enableCompression bool) Driver {
 	validateInitialSettings()
 
 	svc := session.Must(session.NewSession(&aws.Config{
@@ -38,9 +40,10 @@ func NewS3() Driver {
 		//Credentials: credentials.NewStaticCredentials(key, secret, ""),
 	}))
 	s := &S3{
-		sess:        svc,
-		uploader:    s3manager.NewUploader(svc),
-		lastFlushed: time.Now(),
+		sess:              svc,
+		uploader:          s3manager.NewUploader(svc),
+		lastFlushed:       time.Now(),
+		enableCompression: enableCompression,
 	}
 	var err error
 	s.w, err = s.newUploader()
@@ -78,7 +81,11 @@ func (so *S3) newUploader() (io.WriteCloser, error) {
 func (so *S3) upload(r *io.PipeReader) {
 	defer so.wg.Done()
 	t := time.Now()
-	key := fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s`, dataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String())
+	suffix := ``
+	if so.enableCompression {
+		suffix = `.lz4`
+	}
+	key := fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s%s`, dataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String(), suffix)
 	_, err := so.uploader.Upload(&s3manager.UploadInput{
 		Body:   r,
 		Bucket: aws.String(bucket),

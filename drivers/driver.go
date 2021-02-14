@@ -16,8 +16,10 @@ var (
 		},
 		`stub`:    NewStub,
 		`discard`: NewDiscard,
-		`s3`:      NewS3,
-		`sqs`:     NewSqs,
+		`s3`: func() Driver {
+			return NewS3(os.Getenv(`ENABLE_COMPRESSION`) == `tue`)
+		},
+		`sqs`: NewSqs,
 	}
 )
 

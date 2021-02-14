@@ -18,13 +18,13 @@ type Writer struct {
 }
 
 var (
-	maxTime, _ = strconv.Atoi(os.Getenv(`MAX_BUFFER_TIME_MILLISECONDS`))
-	enableGzip = os.Getenv(`ENABLE_GZIP`)
+	maxTime, _        = strconv.Atoi(os.Getenv(`MAX_BUFFER_TIME_MILLISECONDS`))
+	enableCompression = os.Getenv(`ENABLE_COMPRESSION`)
 )
 
 func NewWriter(d func() drivers.Driver) *Writer {
 	selectedDriver := d
-	if enableGzip == `true` {
+	if enableCompression == `true` {
 		compressed := func() drivers.Driver {
 			t, _ := drivers.NewCompressor(d)
 			return t

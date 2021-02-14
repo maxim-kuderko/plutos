@@ -78,7 +78,7 @@ func TestWriter_ConcurrentMultiWrite(t *testing.T) {
 
 func TestWriter_ConcurrentMultiWriteGZIP(t *testing.T) {
 	stub := drivers.NewStub()
-	enableGzip = `true`
+	enableCompression = `true`
 	tester := NewWriter(func() drivers.Driver {
 		return stub
 	})
@@ -110,7 +110,7 @@ func TestWriter_ConcurrentMultiWriteGZIP(t *testing.T) {
 
 func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 	stub := drivers.NewStub()
-	enableGzip = `true`
+	enableCompression = `true`
 	maxTime = 1
 	tester := NewWriter(func() drivers.Driver {
 		return stub
