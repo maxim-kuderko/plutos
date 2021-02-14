@@ -144,13 +144,30 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 
 func BenchmarkWriter_Write(b *testing.B) {
 	b.ReportAllocs()
-	tester := NewWriter(drivers.NewStub)
+	tester := NewWriter(drivers.NewDiscard)
 	e := Event{
 		RawData: []byte(`{"test": "me"}`),
 		Enrichment: Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
+	data, _ := jsoniter.ConfigFastest.Marshal(e)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tester.Write(data)
+	}
+}
+
+func BenchmarkWriter_WriteCompress(b *testing.B) {
+	b.ReportAllocs()
+	tester := NewWriter(drivers.NewDiscard)
+	e := Event{
+		RawData: []byte(`{"test": "me"}`),
+		Enrichment: Enrichment{
+			Headers: map[string]string{`testH`: `testH`},
+		},
+	}
+	enableCompression = `true`
 	data, _ := jsoniter.ConfigFastest.Marshal(e)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
