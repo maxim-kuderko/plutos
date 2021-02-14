@@ -15,7 +15,6 @@ import (
 	"github.com/valyala/fastrand"
 	"go.uber.org/atomic"
 	"hash"
-	//_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"sync"
