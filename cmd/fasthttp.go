@@ -56,6 +56,7 @@ func defineRoutes(router *routing.Router, healthy *atomic.Bool, w *plutos.Writer
 
 	router.Get("/e", func(c *routing.Context) error {
 		e, err := EventFromRoutingCtxGET(c)
+		defer bytebufferpool.Put(e)
 		if err != nil {
 			c.Response.SetStatusCode(fasthttp.StatusBadRequest)
 			return err
@@ -82,15 +83,15 @@ func EventFromRoutingCtxGET(ctx *routing.Context) (*bytebufferpool.ByteBuffer, e
 
 	//write metadata
 	output.WriteString(`,`)
-	output.WriteString(`written_at:"`)
+	output.WriteString(`"written_at":"`)
 	output.WriteString(time.Now().Format(time.RFC3339Nano))
 	output.WriteString(`",`)
-	output.WriteString(`request_id:"`)
+	output.WriteString(`"request_id":"`)
 	output.WriteTo(hasher)
 	output.WriteString(hex.EncodeToString(hasher.Sum(nil)))
 	output.WriteString(`"`)
 
-	output.WriteString(`}`)
+	output.WriteString("}\n")
 
 	return output, nil
 }

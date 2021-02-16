@@ -111,7 +111,7 @@ func TestWriter_ConcurrentMultiWriteGZIP(t *testing.T) {
 func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 	stub := drivers.NewStub()
 	enableCompression = `true`
-	maxTime = 1
+	maxTime = 100
 	tester := NewWriter(func() drivers.Driver {
 		return stub
 	})
@@ -132,7 +132,7 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 	}
 	wg.Wait()
 	tester.Close()
-	time.Sleep(time.Second * (time.Duration(maxTime) + 2))
+	time.Sleep(time.Second)
 
 	r := lz4.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
 	data, _ := ioutil.ReadAll(r)
