@@ -1,7 +1,7 @@
 package drivers
 
 import (
-	"github.com/golang/snappy"
+	"github.com/valyala/gozstd"
 )
 
 type compressor struct {
@@ -11,7 +11,7 @@ type compressor struct {
 
 func NewCompressor(w func() Driver) (Driver, error) {
 	orig := w()
-	gw := snappy.NewBufferedWriter(orig)
+	gw := gozstd.NewWriterLevel(orig, 1)
 	return &compressor{
 		origWriter: orig,
 		w:          gw,

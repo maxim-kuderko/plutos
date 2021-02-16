@@ -5,7 +5,7 @@ import (
 	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/maxim-kuderko/plutos/drivers"
-	"github.com/pierrec/lz4"
+	"github.com/valyala/gozstd"
 	"io/ioutil"
 	"strings"
 	"sync"
@@ -100,7 +100,7 @@ func TestWriter_ConcurrentMultiWriteGZIP(t *testing.T) {
 	wg.Wait()
 	tester.Close()
 
-	r := lz4.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
+	r := gozstd.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
 	data, _ := ioutil.ReadAll(r)
 	if len(strings.Split(string(data), "\n")) != times+1 {
 		fmt.Println(len(strings.Split(string(data), "\n")))
@@ -134,7 +134,7 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 	tester.Close()
 	time.Sleep(time.Second)
 
-	r := lz4.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
+	r := gozstd.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
 	data, _ := ioutil.ReadAll(r)
 	if len(strings.Split(string(data), "\n")) != times+1 {
 		fmt.Println(len(strings.Split(string(data), "\n")))
