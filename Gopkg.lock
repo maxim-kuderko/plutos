@@ -101,14 +101,6 @@
   version = "v1.11.7"
 
 [[projects]]
-  digest = "1:4d4cab38f2e6a9f0f17fdbe03746c6c983ddacbd2bae4d49798d928d0aaad790"
-  name = "github.com/klauspost/pgzip"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "52335df0e96fa9c509c6fa2966697620beef6dc3"
-  version = "v1.2.5"
-
-[[projects]]
   digest = "1:33422d238f147d247752996a26574ac48dcf472976eda7f5134015f06bf16563"
   name = "github.com/modern-go/concurrent"
   packages = ["."]
@@ -123,6 +115,17 @@
   pruneopts = "UT"
   revision = "4b7aa43c6742a2c18fdef89dd197aaae7dac7ccd"
   version = "1.0.1"
+
+[[projects]]
+  digest = "1:5d4e89b52ea1467abc362f480ebba12a1b528217f5b6f617ba6a1203d566571b"
+  name = "github.com/pierrec/lz4"
+  packages = [
+    ".",
+    "internal/xxh32",
+  ]
+  pruneopts = "UT"
+  revision = "0e583d326e0ec6b9c1ad223188dc709af385408e"
+  version = "v2.6.0"
 
 [[projects]]
   branch = "master"
@@ -146,6 +149,14 @@
   version = "v1.20.0"
 
 [[projects]]
+  digest = "1:36684dffa07ffc8bd90bb9c2addaf62a71536d68caa4ef725b8b2490db90bf1a"
+  name = "github.com/twmb/murmur3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "610077ff6fd864908e4604f64b6c0fc000aa6232"
+  version = "v1.1.5"
+
+[[projects]]
   digest = "1:c468422f334a6b46a19448ad59aaffdfc0a36b08fdcc1c749a0b29b6453d7e59"
   name = "github.com/valyala/bytebufferpool"
   packages = ["."]
@@ -166,6 +177,14 @@
   version = "v1.19.0"
 
 [[projects]]
+  digest = "1:b779c126b31f65b90e1a8ef9db2937414cb9c6bfae00dd3cf4707c2ee4f71fb4"
+  name = "github.com/valyala/fastrand"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "de27aeef8e28dd2bbf18ac43a0277f0f119ad14c"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:7a3de4371d6b68c6f37a0df2c09905664d9de59026c91cbe275aae55f4fe760f"
   name = "go.uber.org/atomic"
   packages = ["."]
@@ -183,11 +202,14 @@
     "github.com/aws/aws-sdk-go/service/sqs",
     "github.com/google/uuid",
     "github.com/json-iterator/go",
-    "github.com/klauspost/pgzip",
+    "github.com/pierrec/lz4",
     "github.com/qiangxue/fasthttp-routing",
     "github.com/rs/zerolog",
     "github.com/rs/zerolog/log",
+    "github.com/twmb/murmur3",
+    "github.com/valyala/bytebufferpool",
     "github.com/valyala/fasthttp",
+    "github.com/valyala/fastrand",
     "go.uber.org/atomic",
   ]
   solver-name = "gps-cdcl"

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/md5"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
@@ -10,6 +9,7 @@ import (
 	"github.com/qiangxue/fasthttp-routing"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/twmb/murmur3"
 	"github.com/valyala/bytebufferpool"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastrand"
@@ -122,5 +122,5 @@ func queryParamsToMapJson(output *bytebufferpool.ByteBuffer, b []byte, kvSep, pa
 }
 
 var hasherPool = sync.Pool{New: func() interface{} {
-	return md5.New()
+	return murmur3.New128()
 }}
