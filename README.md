@@ -29,7 +29,7 @@ docker run --network=host \
        -e AWS_ACCESS_KEY_ID=<AWS_KEY> \
        -e AWS_SECRET_ACCESS_KEY=<AWS SECRET>  \
        -e SQS_QUEUE=<SQS_ENDPOINT>
-       maxkuder/plutos:0.2.0
+       maxkuder/plutos:0.2.1
 ```
 
 from source:
