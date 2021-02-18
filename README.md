@@ -18,7 +18,7 @@
 # How to run
 
 ```shell
-docker run --netowrk=host \
+docker run --network=host \
        -e PORT=:8080 \
        -e DRIVER=s3 \
        -e S3_REGION=<REGION> \
