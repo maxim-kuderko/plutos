@@ -29,9 +29,13 @@ func (so *Stub) Close() error {
 }
 
 func (so *Stub) Counter() int {
+	so.mu.Lock()
+	defer so.mu.Unlock()
 	return so.counter
 }
 
 func (so *Stub) Data() []byte {
+	so.mu.Lock()
+	defer so.mu.Unlock()
 	return so.buff.Bytes()
 }
