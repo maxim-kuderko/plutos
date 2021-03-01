@@ -5,7 +5,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1
+      - image: golang:1
     working_directory: /go/src/github.com/maxim-kuderko/plutos
     steps:
       - checkout

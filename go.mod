@@ -7,10 +7,11 @@ require (
 	github.com/golang/snappy v0.0.3
 	github.com/google/uuid v1.2.0
 	github.com/json-iterator/go v1.1.10
-	github.com/qiangxue/fasthttp-routing v0.0.0-20160225050629-6ccdc2a18d87 // indirect
+	github.com/qiangxue/fasthttp-routing v0.0.0-20160225050629-6ccdc2a18d87
 	github.com/rs/zerolog v1.20.0
-	github.com/valyala/fasthttp v1.22.0 // indirect
-	github.com/valyala/fastrand v1.0.0 // indirect
+	github.com/valyala/bytebufferpool v1.0.0
+	github.com/valyala/fasthttp v1.22.0
+	github.com/valyala/fastrand v1.0.0
 	github.com/valyala/gozstd v1.9.0
-	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/atomic v1.7.0
 )
