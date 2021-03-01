@@ -4,6 +4,8 @@ go 1.15
 
 require (
 	github.com/aws/aws-sdk-go v1.37.20
+	github.com/go-ozzo/ozzo-routing v2.1.4+incompatible // indirect
+	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f // indirect
 	github.com/golang/snappy v0.0.3
 	github.com/google/uuid v1.2.0
 	github.com/json-iterator/go v1.1.10
@@ -12,6 +14,5 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0
 	github.com/valyala/fasthttp v1.22.0
 	github.com/valyala/fastrand v1.0.0
-	github.com/valyala/gozstd v1.9.0
 	go.uber.org/atomic v1.7.0
 )
