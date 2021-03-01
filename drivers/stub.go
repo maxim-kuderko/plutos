@@ -2,11 +2,12 @@ package drivers
 
 import (
 	"bytes"
-	"go.uber.org/atomic"
+	"sync"
 )
 
 type Stub struct {
-	counter atomic.Int32
+	counter int
+	mu      sync.Mutex
 	buff    *bytes.Buffer
 }
 
@@ -17,7 +18,9 @@ func NewStub() Driver {
 }
 
 func (so *Stub) Write(e []byte) (int, error) {
-	so.counter.Add(1)
+	so.mu.Lock()
+	defer so.mu.Unlock()
+	so.counter++
 	return so.buff.Write(e)
 }
 
@@ -26,7 +29,7 @@ func (so *Stub) Close() error {
 }
 
 func (so *Stub) Counter() int {
-	return int(so.counter.Load())
+	return so.counter
 }
 
 func (so *Stub) Data() []byte {
