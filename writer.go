@@ -32,17 +32,17 @@ func NewWriter(d func() drivers.Driver) *Writer {
 		selectedDriver = compressed
 	}
 	w := &Writer{driver: selectedDriver(), newDriver: selectedDriver}
-	go w.periodicFlush()
+	go w.periodicFlush(maxTime)
 	return w
 }
 
 const DEFAULT_MAX_TIME = 60
 
-func (w *Writer) periodicFlush() {
-	if maxTime <= 0 {
-		maxTime = DEFAULT_MAX_TIME
+func (w *Writer) periodicFlush(t int) {
+	if t <= 0 {
+		t = DEFAULT_MAX_TIME
 	}
-	ticker := time.NewTicker(time.Duration(maxTime) * time.Millisecond)
+	ticker := time.NewTicker(time.Duration(t) * time.Millisecond)
 	for range ticker.C {
 		w.flush()
 	}
