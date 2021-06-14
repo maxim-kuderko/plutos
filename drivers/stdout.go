@@ -13,6 +13,5 @@ func (so *StdOut) Write(e []byte) (int, error) {
 }
 
 func (so *StdOut) Close() error {
-	fmt.Println(`closed`)
 	return nil
 }
