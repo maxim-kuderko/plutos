@@ -1,7 +1,7 @@
 package drivers
 
 import (
-	gzip "github.com/klauspost/compress"
+	gzip "github.com/klauspost/pgzip"
 )
 
 type compressor struct {
