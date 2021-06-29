@@ -83,7 +83,7 @@ func (so *S3) upload(r *io.PipeReader) {
 	t := time.Now()
 	suffix := ``
 	if so.enableCompression {
-		suffix = `.snappy`
+		suffix = `.gz`
 	}
 	key := fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s%s`, dataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String(), suffix)
 	_, err := so.uploader.Upload(&s3manager.UploadInput{
