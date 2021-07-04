@@ -1,6 +1,6 @@
 module github.com/maxim-kuderko/plutos
 
-go 1.15
+go 1.16
 
 require (
 	github.com/aws/aws-sdk-go v1.37.20
@@ -9,6 +9,8 @@ require (
 	github.com/golang/snappy v0.0.3
 	github.com/google/uuid v1.2.0
 	github.com/json-iterator/go v1.1.10
+	github.com/klauspost/compress v1.11.8
+	github.com/klauspost/pgzip v1.2.5
 	github.com/qiangxue/fasthttp-routing v0.0.0-20160225050629-6ccdc2a18d87
 	github.com/rs/zerolog v1.20.0
 	github.com/valyala/bytebufferpool v1.0.0
