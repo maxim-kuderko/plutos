@@ -3,8 +3,8 @@ package plutos
 import (
 	"bytes"
 	"fmt"
-	"github.com/golang/snappy"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/klauspost/compress/gzip"
 	"github.com/maxim-kuderko/plutos/drivers"
 	"io/ioutil"
 	"strings"
@@ -76,7 +76,7 @@ func TestWriter_ConcurrentMultiWrite(t *testing.T) {
 	}
 }
 
-func TestWriter_ConcurrentMultiWriteSnappy(t *testing.T) {
+func TestWriter_ConcurrentMultiWriteGzip(t *testing.T) {
 	stub := drivers.NewStub()
 	enableCompression = `true`
 	tester := NewWriter(func() drivers.Driver {
@@ -88,7 +88,7 @@ func TestWriter_ConcurrentMultiWriteSnappy(t *testing.T) {
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
-	times := 1000
+	times := 10
 	wg := sync.WaitGroup{}
 	wg.Add(times)
 	for i := 0; i < times; i++ {
@@ -99,8 +99,11 @@ func TestWriter_ConcurrentMultiWriteSnappy(t *testing.T) {
 	}
 	wg.Wait()
 	tester.Close()
-
-	r := snappy.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
+	time.Sleep(time.Second)
+	r, err := gzip.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
+	if err != nil {
+		panic(err)
+	}
 	data, _ := ioutil.ReadAll(r)
 	if len(strings.Split(string(data), "\n")) != times+1 {
 		fmt.Println(len(strings.Split(string(data), "\n")))
@@ -134,7 +137,7 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 	tester.Close()
 	time.Sleep(time.Second)
 
-	r := snappy.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
+	r, _ := gzip.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
 	data, _ := ioutil.ReadAll(r)
 	if len(strings.Split(string(data), "\n")) != times+1 {
 		fmt.Println(len(strings.Split(string(data), "\n")))
