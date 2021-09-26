@@ -10,6 +10,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"io"
+	"strings"
 	"sync"
 	"time"
 )
@@ -21,19 +22,21 @@ type S3 struct {
 	w           io.WriteCloser
 	wg          sync.WaitGroup
 
-	cfg *S3Config
+	cfg        *S3Config
+	instanceID *string
 }
 
 type S3Config struct {
-	Region, DataPrefix, Bucket, SqsQueue string
-	EnableCompression                    bool
+	Region, DataPrefix, Bucket, SqsQueueName string
+	sqsQueueUrl                              *string
+	EnableCompression                        bool
 }
 
 /*var (
 	Region     = os.Getenv(`S3_REGION`)
 	DataPrefix = os.Getenv(`S3_PREFIX`)
 	Bucket     = os.Getenv(`S3_BUCKET`)
-	SqsQueue   = os.Getenv(`SQS_QUEUE`)
+	SqsQueueName   = os.Getenv(`SQS_QUEUE`)
 )*/
 
 func NewS3(cfg *S3Config) Driver {
@@ -41,11 +44,13 @@ func NewS3(cfg *S3Config) Driver {
 	svc := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(cfg.Region),
 	}))
+	cfg.sqsQueueUrl = getOrCreateQueue(cfg, svc)
 	s := &S3{
 		sess:        svc,
 		uploader:    s3manager.NewUploader(svc),
 		lastFlushed: time.Now(),
 		cfg:         cfg,
+		instanceID:  aws.String(uuid.NewString()),
 	}
 	var err error
 	s.w, err = s.newUploader()
@@ -53,6 +58,36 @@ func NewS3(cfg *S3Config) Driver {
 		panic(err)
 	}
 	return s
+}
+
+func getOrCreateQueue(cfg *S3Config, sess *session.Session) *string {
+	client := sqs.New(sess)
+	var url *string
+	r, err := client.GetQueueUrl(&sqs.GetQueueUrlInput{
+		QueueName:              aws.String(cfg.SqsQueueName),
+		QueueOwnerAWSAccountId: nil,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), sqs.ErrCodeQueueDoesNotExist) {
+			res, err := client.CreateQueue(&sqs.CreateQueueInput{
+				Attributes: map[string]*string{
+					`FifoQueue`:           aws.String(`true`),
+					`DeduplicationScope`:  aws.String(`messageGroup`),
+					`FifoThroughputLimit`: aws.String(`perMessageGroupId`),
+				},
+				QueueName: aws.String(cfg.SqsQueueName),
+			})
+			if err != nil {
+				panic(err)
+			}
+			url = res.QueueUrl
+		} else {
+			panic(err)
+		}
+	} else {
+		url = r.QueueUrl
+	}
+	return url
 }
 
 func validateInitialSettings(cfg *S3Config) {
@@ -68,7 +103,7 @@ func validateInitialSettings(cfg *S3Config) {
 		panic(`S3_PREFIX is empty`)
 	}
 
-	if cfg.SqsQueue == `` {
+	if cfg.SqsQueueName == `` {
 		panic(`SQS_QUEUE is empty`)
 	}
 }
@@ -112,12 +147,12 @@ func (so *S3) upload(r *io.PipeReader) {
 				},
 			},
 		}})
-	uid := uuid.New().String()
+	uid := uuid.NewString()
 	if _, err := sqs.New(so.sess).SendMessage(&sqs.SendMessageInput{
 		MessageBody:            aws.String(string(b)),
 		MessageDeduplicationId: aws.String(uid),
-		MessageGroupId:         aws.String(uid),
-		QueueUrl:               aws.String(so.cfg.SqsQueue),
+		MessageGroupId:         so.instanceID,
+		QueueUrl:               so.cfg.sqsQueueUrl,
 	}); err != nil {
 		logrus.Error(err)
 	}

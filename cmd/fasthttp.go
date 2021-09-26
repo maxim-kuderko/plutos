@@ -17,6 +17,7 @@ import (
 	"hash"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -28,7 +29,12 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	router := routing.New()
-	writer := plutos.NewWriter(drivers.FetchDriver())
+	maxTime, _ := strconv.Atoi(os.Getenv(`MAX_BUFFER_TIME_MILLISECONDS`))
+	comp, _ := strconv.ParseBool(os.Getenv(`ENABLE_COMPRESSION`))
+	writer := plutos.NewWriter(&plutos.Config{
+		EnableCompression: comp,
+		BufferTime:        time.Duration(maxTime) * time.Millisecond,
+	}, drivers.FetchDriver())
 	defineRoutes(router, healthy, writer)
 	go func() {
 		srv := fasthttp.Server{

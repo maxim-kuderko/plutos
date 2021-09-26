@@ -26,7 +26,7 @@ var (
 				Region:            os.Getenv(`S3_REGION`),
 				DataPrefix:        os.Getenv(`S3_PREFIX`),
 				Bucket:            os.Getenv(`S3_BUCKET`),
-				SqsQueue:          os.Getenv(`SQS_QUEUE`),
+				SqsQueueName:      os.Getenv(`SQS_QUEUE`),
 				EnableCompression: os.Getenv(`ENABLE_COMPRESSION`) == `true`,
 			})
 		},

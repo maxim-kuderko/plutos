@@ -2,8 +2,6 @@ package plutos
 
 import (
 	"github.com/maxim-kuderko/plutos/drivers"
-	"os"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -17,14 +15,14 @@ type Writer struct {
 	wg sync.WaitGroup
 }
 
-var (
-	maxTime, _        = strconv.Atoi(os.Getenv(`MAX_BUFFER_TIME_MILLISECONDS`))
-	enableCompression = os.Getenv(`ENABLE_COMPRESSION`)
-)
+type Config struct {
+	EnableCompression bool
+	BufferTime        time.Duration
+}
 
-func NewWriter(d func() drivers.Driver) *Writer {
+func NewWriter(cfg *Config, d func() drivers.Driver) *Writer {
 	selectedDriver := d
-	if enableCompression == `true` {
+	if cfg.EnableCompression {
 		compressed := func() drivers.Driver {
 			t, _ := drivers.NewCompressor(d)
 			return t
@@ -32,17 +30,17 @@ func NewWriter(d func() drivers.Driver) *Writer {
 		selectedDriver = compressed
 	}
 	w := &Writer{driver: selectedDriver(), newDriver: selectedDriver}
-	go w.periodicFlush(maxTime)
+	go w.periodicFlush(cfg.BufferTime)
 	return w
 }
 
-const DEFAULT_MAX_TIME = 60
+const DEFAULT_MAX_TIME = 60 * time.Millisecond
 
-func (w *Writer) periodicFlush(t int) {
+func (w *Writer) periodicFlush(t time.Duration) {
 	if t <= 0 {
 		t = DEFAULT_MAX_TIME
 	}
-	ticker := time.NewTicker(time.Duration(t) * time.Millisecond)
+	ticker := time.NewTicker(t)
 	for range ticker.C {
 		w.flush()
 	}
