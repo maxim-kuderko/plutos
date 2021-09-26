@@ -30,7 +30,6 @@ func main() {
 	router := routing.New()
 	writer := plutos.NewWriter(drivers.FetchDriver())
 	defineRoutes(router, healthy, writer)
-
 	go func() {
 		srv := fasthttp.Server{
 			Handler:               router.HandleRequest,

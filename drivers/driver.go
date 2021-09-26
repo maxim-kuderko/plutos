@@ -23,11 +23,11 @@ var (
 		`discard`: NewDiscard,
 		`s3`: func() Driver {
 			return NewS3(&S3Config{
-				region:            os.Getenv(`S3_REGION`),
-				dataPrefix:        os.Getenv(`S3_PREFIX`),
-				bucket:            os.Getenv(`S3_BUCKET`),
-				sqsQueue:          os.Getenv(`SQS_QUEUE`),
-				enableCompression: os.Getenv(`ENABLE_COMPRESSION`) == `true`,
+				Region:            os.Getenv(`S3_REGION`),
+				DataPrefix:        os.Getenv(`S3_PREFIX`),
+				Bucket:            os.Getenv(`S3_BUCKET`),
+				SqsQueue:          os.Getenv(`SQS_QUEUE`),
+				EnableCompression: os.Getenv(`ENABLE_COMPRESSION`) == `true`,
 			})
 		},
 	}

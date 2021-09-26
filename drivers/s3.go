@@ -25,21 +25,21 @@ type S3 struct {
 }
 
 type S3Config struct {
-	region, dataPrefix, bucket, sqsQueue string
-	enableCompression                    bool
+	Region, DataPrefix, Bucket, SqsQueue string
+	EnableCompression                    bool
 }
 
 /*var (
-	region     = os.Getenv(`S3_REGION`)
-	dataPrefix = os.Getenv(`S3_PREFIX`)
-	bucket     = os.Getenv(`S3_BUCKET`)
-	sqsQueue   = os.Getenv(`SQS_QUEUE`)
+	Region     = os.Getenv(`S3_REGION`)
+	DataPrefix = os.Getenv(`S3_PREFIX`)
+	Bucket     = os.Getenv(`S3_BUCKET`)
+	SqsQueue   = os.Getenv(`SQS_QUEUE`)
 )*/
 
 func NewS3(cfg *S3Config) Driver {
 	validateInitialSettings(cfg)
 	svc := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String(cfg.region),
+		Region: aws.String(cfg.Region),
 	}))
 	s := &S3{
 		sess:        svc,
@@ -56,19 +56,19 @@ func NewS3(cfg *S3Config) Driver {
 }
 
 func validateInitialSettings(cfg *S3Config) {
-	if cfg.region == `` {
+	if cfg.Region == `` {
 		panic(`S3_REGION is empty`)
 	}
 
-	if cfg.bucket == `` {
+	if cfg.Bucket == `` {
 		panic(`S3_BUCKET is empty`)
 	}
 
-	if cfg.dataPrefix == `` {
+	if cfg.DataPrefix == `` {
 		panic(`S3_PREFIX is empty`)
 	}
 
-	if cfg.sqsQueue == `` {
+	if cfg.SqsQueue == `` {
 		panic(`SQS_QUEUE is empty`)
 	}
 }
@@ -84,13 +84,13 @@ func (so *S3) upload(r *io.PipeReader) {
 	defer so.wg.Done()
 	t := time.Now()
 	suffix := ``
-	if so.cfg.enableCompression {
+	if so.cfg.EnableCompression {
 		suffix = `.gz`
 	}
-	key := fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s%s`, so.cfg.dataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String(), suffix)
+	key := fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s%s`, so.cfg.DataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String(), suffix)
 	_, err := so.uploader.Upload(&s3manager.UploadInput{
 		Body:   r,
-		Bucket: aws.String(so.cfg.bucket),
+		Bucket: aws.String(so.cfg.Bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
@@ -101,10 +101,10 @@ func (so *S3) upload(r *io.PipeReader) {
 		WrittenAt: time.Now().Format(time.RFC3339),
 		Records: []Record{
 			{
-				AwsRegion: so.cfg.region,
+				AwsRegion: so.cfg.Region,
 				S3: S3S{
 					Bucket: Bucket{
-						Name: so.cfg.bucket,
+						Name: so.cfg.Bucket,
 					},
 					Object: Object{
 						Key: key,
@@ -117,7 +117,7 @@ func (so *S3) upload(r *io.PipeReader) {
 		MessageBody:            aws.String(string(b)),
 		MessageDeduplicationId: aws.String(uid),
 		MessageGroupId:         aws.String(uid),
-		QueueUrl:               aws.String(so.cfg.sqsQueue),
+		QueueUrl:               aws.String(so.cfg.SqsQueue),
 	}); err != nil {
 		logrus.Error(err)
 	}
@@ -132,7 +132,7 @@ type Record struct {
 	S3        S3S    `json:"s3"`
 }
 type S3S struct {
-	Bucket Bucket `json:"bucket"`
+	Bucket Bucket `json:"Bucket"`
 	Object Object `json:"object"`
 }
 
