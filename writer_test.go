@@ -5,6 +5,7 @@ import (
 	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/klauspost/compress/gzip"
+	"github.com/maxim-kuderko/plutos/cmd"
 	"github.com/maxim-kuderko/plutos/drivers"
 	"io/ioutil"
 	"strings"
@@ -18,9 +19,9 @@ func TestWriter_SingleWrite(t *testing.T) {
 	tester := NewWriter(func() drivers.Driver {
 		return stub
 	})
-	e := Event{
+	e := main.Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: Enrichment{
+		Enrichment: main.Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
@@ -35,9 +36,9 @@ func TestWriter_MultiWrite(t *testing.T) {
 	tester := NewWriter(func() drivers.Driver {
 		return stub
 	})
-	e := Event{
+	e := main.Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: Enrichment{
+		Enrichment: main.Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
@@ -55,9 +56,9 @@ func TestWriter_ConcurrentMultiWrite(t *testing.T) {
 	tester := NewWriter(func() drivers.Driver {
 		return stub
 	})
-	e := Event{
+	e := main.Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: Enrichment{
+		Enrichment: main.Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
@@ -82,9 +83,9 @@ func TestWriter_ConcurrentMultiWriteGzip(t *testing.T) {
 	tester := NewWriter(func() drivers.Driver {
 		return stub
 	})
-	e := Event{
+	e := main.Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: Enrichment{
+		Enrichment: main.Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
@@ -118,9 +119,9 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 	tester := NewWriter(func() drivers.Driver {
 		return stub
 	})
-	e := Event{
+	e := main.Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: Enrichment{
+		Enrichment: main.Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
@@ -148,9 +149,9 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 func BenchmarkWriter_Write(b *testing.B) {
 	b.ReportAllocs()
 	tester := NewWriter(drivers.NewDiscard)
-	e := Event{
+	e := main.Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: Enrichment{
+		Enrichment: main.Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
@@ -164,9 +165,9 @@ func BenchmarkWriter_Write(b *testing.B) {
 func BenchmarkWriter_WriteCompress(b *testing.B) {
 	b.ReportAllocs()
 	tester := NewWriter(drivers.NewDiscard)
-	e := Event{
+	e := main.Event{
 		RawData: []byte(`{"test": "me"}`),
-		Enrichment: Enrichment{
+		Enrichment: main.Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}

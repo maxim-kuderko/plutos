@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 )
@@ -11,15 +12,24 @@ var (
 	driver = os.Getenv(`DRIVER`)
 
 	driverRegistry = map[string]func() Driver{
+		``: func() Driver {
+			logrus.Info("no driver specified, falling back to stdout")
+			return &StdOut{}
+		},
 		`stdout`: func() Driver {
 			return &StdOut{}
 		},
 		`stub`:    NewStub,
 		`discard`: NewDiscard,
 		`s3`: func() Driver {
-			return NewS3(os.Getenv(`ENABLE_COMPRESSION`) == `true`)
+			return NewS3(&S3Config{
+				region:            os.Getenv(`S3_REGION`),
+				dataPrefix:        os.Getenv(`S3_PREFIX`),
+				bucket:            os.Getenv(`S3_BUCKET`),
+				sqsQueue:          os.Getenv(`SQS_QUEUE`),
+				enableCompression: os.Getenv(`ENABLE_COMPRESSION`) == `true`,
+			})
 		},
-		`sqs`: NewSqs,
 	}
 )
 

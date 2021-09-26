@@ -1,4 +1,4 @@
-package plutos
+package main
 
 import (
 	"encoding/json"

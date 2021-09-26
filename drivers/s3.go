@@ -1,16 +1,15 @@
 package drivers
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/sirupsen/logrus"
 	"io"
-	"os"
 	"sync"
 	"time"
 )
@@ -22,28 +21,31 @@ type S3 struct {
 	w           io.WriteCloser
 	wg          sync.WaitGroup
 
-	enableCompression bool
+	cfg *S3Config
 }
 
-var (
+type S3Config struct {
+	region, dataPrefix, bucket, sqsQueue string
+	enableCompression                    bool
+}
+
+/*var (
 	region     = os.Getenv(`S3_REGION`)
 	dataPrefix = os.Getenv(`S3_PREFIX`)
 	bucket     = os.Getenv(`S3_BUCKET`)
 	sqsQueue   = os.Getenv(`SQS_QUEUE`)
-)
+)*/
 
-func NewS3(enableCompression bool) Driver {
-	validateInitialSettings()
-
+func NewS3(cfg *S3Config) Driver {
+	validateInitialSettings(cfg)
 	svc := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String(region),
-		//Credentials: credentials.NewStaticCredentials(key, secret, ""),
+		Region: aws.String(cfg.region),
 	}))
 	s := &S3{
-		sess:              svc,
-		uploader:          s3manager.NewUploader(svc),
-		lastFlushed:       time.Now(),
-		enableCompression: enableCompression,
+		sess:        svc,
+		uploader:    s3manager.NewUploader(svc),
+		lastFlushed: time.Now(),
+		cfg:         cfg,
 	}
 	var err error
 	s.w, err = s.newUploader()
@@ -53,20 +55,20 @@ func NewS3(enableCompression bool) Driver {
 	return s
 }
 
-func validateInitialSettings() {
-	if region == `` {
+func validateInitialSettings(cfg *S3Config) {
+	if cfg.region == `` {
 		panic(`S3_REGION is empty`)
 	}
 
-	if bucket == `` {
+	if cfg.bucket == `` {
 		panic(`S3_BUCKET is empty`)
 	}
 
-	if dataPrefix == `` {
+	if cfg.dataPrefix == `` {
 		panic(`S3_PREFIX is empty`)
 	}
 
-	if sqsQueue == `` {
+	if cfg.sqsQueue == `` {
 		panic(`SQS_QUEUE is empty`)
 	}
 }
@@ -82,26 +84,27 @@ func (so *S3) upload(r *io.PipeReader) {
 	defer so.wg.Done()
 	t := time.Now()
 	suffix := ``
-	if so.enableCompression {
+	if so.cfg.enableCompression {
 		suffix = `.gz`
 	}
-	key := fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s%s`, dataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String(), suffix)
+	key := fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s%s`, so.cfg.dataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String(), suffix)
 	_, err := so.uploader.Upload(&s3manager.UploadInput{
 		Body:   r,
-		Bucket: aws.String(bucket),
+		Bucket: aws.String(so.cfg.bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		log.Error().Stack().Err(err).Msg("")
+		logrus.Error(err)
+		return
 	}
-	b, _ := json.Marshal(S3SqsEvent{
+	b, _ := jsoniter.ConfigFastest.Marshal(S3SqsEvent{
 		WrittenAt: time.Now().Format(time.RFC3339),
 		Records: []Record{
 			{
-				AwsRegion: region,
+				AwsRegion: so.cfg.region,
 				S3: S3S{
 					Bucket: Bucket{
-						Name: bucket,
+						Name: so.cfg.bucket,
 					},
 					Object: Object{
 						Key: key,
@@ -114,10 +117,9 @@ func (so *S3) upload(r *io.PipeReader) {
 		MessageBody:            aws.String(string(b)),
 		MessageDeduplicationId: aws.String(uid),
 		MessageGroupId:         aws.String(uid),
-		QueueUrl:               aws.String(sqsQueue),
+		QueueUrl:               aws.String(so.cfg.sqsQueue),
 	}); err != nil {
-
-		log.Error().Stack().Err(err).Msg("")
+		logrus.Error(err)
 	}
 }
 
