@@ -119,14 +119,17 @@ func (so *S3) upload(r *io.PipeReader) {
 	defer so.wg.Done()
 	t := time.Now()
 	suffix := ``
+	encoding := ``
 	if so.cfg.EnableCompression {
 		suffix = `.gz`
+		encoding = `gzip`
 	}
 	key := fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s%s`, so.cfg.DataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String(), suffix)
 	_, err := so.uploader.Upload(&s3manager.UploadInput{
-		Body:   r,
-		Bucket: aws.String(so.cfg.Bucket),
-		Key:    aws.String(key),
+		Body:            r,
+		Bucket:          aws.String(so.cfg.Bucket),
+		Key:             aws.String(key),
+		ContentEncoding: aws.String(encoding),
 	})
 	if err != nil {
 		logrus.Error(err)
