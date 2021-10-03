@@ -34,7 +34,7 @@ func NewWriter(cfg *Config, d func() drivers.Driver) *Writer {
 	return w
 }
 
-const DEFAULT_MAX_TIME = 60 * time.Millisecond
+const DEFAULT_MAX_TIME = 60 * time.Second
 
 func (w *Writer) periodicFlush(t time.Duration) {
 	if t <= 0 {
