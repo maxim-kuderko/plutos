@@ -30,10 +30,9 @@ func main() {
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 	router := routing.New()
 	maxTime, _ := strconv.Atoi(os.Getenv(`MAX_BUFFER_TIME_MILLISECONDS`))
-	comp, _ := strconv.ParseBool(os.Getenv(`ENABLE_COMPRESSION`))
 	writer := plutos.NewWriter(&plutos.Config{
-		EnableCompression: comp,
-		BufferTime:        time.Duration(maxTime) * time.Millisecond,
+		CompressionType: os.Getenv(`COMPRESSION_TYPE`),
+		BufferTime:      time.Duration(maxTime) * time.Millisecond,
 	}, drivers.FetchDriver())
 	defineRoutes(router, healthy, writer)
 	go func() {
