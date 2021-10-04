@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/atomic"
 	"io"
 	"strings"
 	"sync"
@@ -24,12 +26,15 @@ type S3 struct {
 
 	cfg        *S3Config
 	instanceID *string
+
+	cancel     func()
+	wasWritten *atomic.Bool
 }
 
 type S3Config struct {
 	Region, DataPrefix, Bucket, SqsQueueName string
 	sqsQueueUrl                              *string
-	EnableCompression                        bool
+	CompressionType                          string
 }
 
 /*var (
@@ -51,6 +56,7 @@ func NewS3(cfg *S3Config) Driver {
 		lastFlushed: time.Now(),
 		cfg:         cfg,
 		instanceID:  aws.String(uuid.NewString()),
+		wasWritten:  atomic.NewBool(false),
 	}
 	var err error
 	s.w, err = s.newUploader()
@@ -111,21 +117,23 @@ func validateInitialSettings(cfg *S3Config) {
 func (so *S3) newUploader() (io.WriteCloser, error) {
 	r, w := io.Pipe()
 	so.wg.Add(1)
-	go so.upload(r)
+	ctx, cancel := context.WithCancel(context.Background())
+	go so.upload(ctx, r)
+	so.cancel = cancel
 	return w, nil
 }
 
-func (so *S3) upload(r *io.PipeReader) {
+func (so *S3) upload(ctx context.Context, r *io.PipeReader) {
 	defer so.wg.Done()
 	t := time.Now()
 	suffix := ``
 	encoding := ``
-	if so.cfg.EnableCompression {
-		suffix = `.gz`
-		encoding = `gzip`
+	if so.cfg.CompressionType != `` {
+		suffix = fmt.Sprintf(`.%s`, so.cfg.CompressionType)
+		encoding = so.cfg.CompressionType
 	}
 	key := fmt.Sprintf(`/%s/created_date=%s/hour=%s/%s%s`, so.cfg.DataPrefix, t.Format(`2006-01-02`), t.Format(`15`), uuid.New().String(), suffix)
-	_, err := so.uploader.Upload(&s3manager.UploadInput{
+	_, err := so.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
 		Body:            r,
 		Bucket:          aws.String(so.cfg.Bucket),
 		Key:             aws.String(key),
@@ -183,10 +191,14 @@ type Object struct {
 
 // not go routine safe
 func (so *S3) Write(e []byte) (int, error) {
+	so.wasWritten.Store(true)
 	return so.w.Write(e)
 }
 
 func (so *S3) Close() error {
+	if !so.wasWritten.Load() {
+		so.cancel()
+	}
 	if err := so.w.Close(); err != nil {
 		return err
 	}

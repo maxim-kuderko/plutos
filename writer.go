@@ -16,18 +16,13 @@ type Writer struct {
 }
 
 type Config struct {
-	EnableCompression bool
-	BufferTime        time.Duration
+	CompressionType string
+	BufferTime      time.Duration
 }
 
 func NewWriter(cfg *Config, d func() drivers.Driver) *Writer {
-	selectedDriver := d
-	if cfg.EnableCompression {
-		compressed := func() drivers.Driver {
-			t, _ := drivers.NewCompressor(d)
-			return t
-		}
-		selectedDriver = compressed
+	selectedDriver := func() drivers.Driver {
+		return drivers.NewCompressor(cfg.CompressionType, d)
 	}
 	w := &Writer{driver: selectedDriver(), newDriver: selectedDriver}
 	go w.periodicFlush(cfg.BufferTime)
@@ -47,12 +42,9 @@ func (w *Writer) periodicFlush(t time.Duration) {
 }
 
 func (w *Writer) flush() {
+	newDrv := w.newDriver()
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if w.currentSize == 0 {
-		return
-	}
-	newDrv := w.newDriver()
 	tmp := w.driver
 	w.driver = newDrv
 	w.currentSize = 0

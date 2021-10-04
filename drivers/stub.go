@@ -2,13 +2,13 @@ package drivers
 
 import (
 	"bytes"
+	"strings"
 	"sync"
 )
 
 type Stub struct {
-	counter int
-	mu      sync.Mutex
-	buff    *bytes.Buffer
+	mu   sync.Mutex
+	buff *bytes.Buffer
 }
 
 func NewStub() Driver {
@@ -20,7 +20,6 @@ func NewStub() Driver {
 func (so *Stub) Write(e []byte) (int, error) {
 	so.mu.Lock()
 	defer so.mu.Unlock()
-	so.counter++
 	return so.buff.Write(e)
 }
 
@@ -31,7 +30,7 @@ func (so *Stub) Close() error {
 func (so *Stub) Counter() int {
 	so.mu.Lock()
 	defer so.mu.Unlock()
-	return so.counter
+	return len(strings.Split(so.buff.String(), "\n"))
 }
 
 func (so *Stub) Data() []byte {

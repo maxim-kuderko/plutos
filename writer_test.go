@@ -15,7 +15,10 @@ import (
 
 func TestWriter_SingleWrite(t *testing.T) {
 	stub := drivers.NewStub()
-	tester := NewWriter(func() drivers.Driver {
+	tester := NewWriter(&Config{
+		CompressionType: "",
+		BufferTime:      time.Second,
+	}, func() drivers.Driver {
 		return stub
 	})
 	e := Event{
@@ -25,14 +28,18 @@ func TestWriter_SingleWrite(t *testing.T) {
 		},
 	}
 	jsoniter.ConfigFastest.NewEncoder(tester).Encode(e)
-	if stub.(*drivers.Stub).Counter() != 1 {
+	tester.Close()
+	if stub.(*drivers.Stub).Counter() != 2 { // one for \n
 		t.Fail()
 	}
 }
 
 func TestWriter_MultiWrite(t *testing.T) {
 	stub := drivers.NewStub()
-	tester := NewWriter(func() drivers.Driver {
+	tester := NewWriter(&Config{
+		CompressionType: "",
+		BufferTime:      time.Second,
+	}, func() drivers.Driver {
 		return stub
 	})
 	e := Event{
@@ -42,17 +49,23 @@ func TestWriter_MultiWrite(t *testing.T) {
 		},
 	}
 	times := 1000
+	encr := jsoniter.ConfigFastest.NewEncoder(tester)
 	for i := 0; i < times; i++ {
-		jsoniter.ConfigFastest.NewEncoder(tester).Encode(e)
+		encr.Encode(e)
 	}
-	if stub.(*drivers.Stub).Counter() != times {
+
+	tester.Close()
+	if c := stub.(*drivers.Stub).Counter(); c != times+1 {
 		t.Fail()
 	}
 }
 
 func TestWriter_ConcurrentMultiWrite(t *testing.T) {
 	stub := drivers.NewStub()
-	tester := NewWriter(func() drivers.Driver {
+	tester := NewWriter(&Config{
+		CompressionType: "",
+		BufferTime:      time.Second,
+	}, func() drivers.Driver {
 		return stub
 	})
 	e := Event{
@@ -71,15 +84,19 @@ func TestWriter_ConcurrentMultiWrite(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	if stub.(*drivers.Stub).Counter() != times {
+
+	tester.Close()
+	if stub.(*drivers.Stub).Counter() != times+1 {
 		t.Fail()
 	}
 }
 
 func TestWriter_ConcurrentMultiWriteGzip(t *testing.T) {
 	stub := drivers.NewStub()
-	enableCompression = `true`
-	tester := NewWriter(func() drivers.Driver {
+	tester := NewWriter(&Config{
+		CompressionType: "gzip",
+		BufferTime:      time.Second,
+	}, func() drivers.Driver {
 		return stub
 	})
 	e := Event{
@@ -88,7 +105,7 @@ func TestWriter_ConcurrentMultiWriteGzip(t *testing.T) {
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
-	times := 10
+	times := 1000
 	wg := sync.WaitGroup{}
 	wg.Add(times)
 	for i := 0; i < times; i++ {
@@ -113,9 +130,11 @@ func TestWriter_ConcurrentMultiWriteGzip(t *testing.T) {
 
 func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 	stub := drivers.NewStub()
-	enableCompression = `true`
-	maxTime = 100
-	tester := NewWriter(func() drivers.Driver {
+
+	tester := NewWriter(&Config{
+		CompressionType: "gzip",
+		BufferTime:      time.Second / 2,
+	}, func() drivers.Driver {
 		return stub
 	})
 	e := Event{
@@ -147,7 +166,10 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 
 func BenchmarkWriter_Write(b *testing.B) {
 	b.ReportAllocs()
-	tester := NewWriter(drivers.NewDiscard)
+	tester := NewWriter(&Config{
+		CompressionType: "",
+		BufferTime:      time.Second,
+	}, drivers.NewDiscard)
 	e := Event{
 		RawData: []byte(`{"test": "me"}`),
 		Enrichment: Enrichment{
@@ -161,16 +183,56 @@ func BenchmarkWriter_Write(b *testing.B) {
 	}
 }
 
-func BenchmarkWriter_WriteCompress(b *testing.B) {
+func BenchmarkWriter_WriteCompressGZIP(b *testing.B) {
 	b.ReportAllocs()
-	tester := NewWriter(drivers.NewDiscard)
+	tester := NewWriter(&Config{
+		CompressionType: "gzip",
+		BufferTime:      time.Second,
+	}, drivers.NewDiscard)
 	e := Event{
 		RawData: []byte(`{"test": "me"}`),
 		Enrichment: Enrichment{
 			Headers: map[string]string{`testH`: `testH`},
 		},
 	}
-	enableCompression = `true`
+	data, _ := jsoniter.ConfigFastest.Marshal(e)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tester.Write(data)
+	}
+}
+
+func BenchmarkWriter_WriteCompressLZ4(b *testing.B) {
+	b.ReportAllocs()
+	tester := NewWriter(&Config{
+		CompressionType: "lz4",
+		BufferTime:      time.Second,
+	}, drivers.NewDiscard)
+	e := Event{
+		RawData: []byte(`{"test": "me"}`),
+		Enrichment: Enrichment{
+			Headers: map[string]string{`testH`: `testH`},
+		},
+	}
+	data, _ := jsoniter.ConfigFastest.Marshal(e)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tester.Write(data)
+	}
+}
+
+func BenchmarkWriter_WriteCompressZSTD(b *testing.B) {
+	b.ReportAllocs()
+	tester := NewWriter(&Config{
+		CompressionType: "zstd",
+		BufferTime:      time.Second,
+	}, drivers.NewDiscard)
+	e := Event{
+		RawData: []byte(`{"test": "me"}`),
+		Enrichment: Enrichment{
+			Headers: map[string]string{`testH`: `testH`},
+		},
+	}
 	data, _ := jsoniter.ConfigFastest.Marshal(e)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
