@@ -7,6 +7,7 @@ import (
 	"github.com/klauspost/compress/gzip"
 	"github.com/maxim-kuderko/plutos/drivers"
 	"io/ioutil"
+	"math/rand"
 	"strings"
 	"sync"
 	"testing"
@@ -91,10 +92,10 @@ func TestWriter_ConcurrentMultiWrite(t *testing.T) {
 	}
 }
 
-func TestWriter_ConcurrentMultiWriteGzip(t *testing.T) {
+func TestWriter_ConcurrentMultiWrite2(t *testing.T) {
 	stub := drivers.NewStub()
 	tester := NewWriter(&Config{
-		CompressionType: "gzip",
+		CompressionType: "",
 		BufferTime:      time.Second,
 	}, func() drivers.Driver {
 		return stub
@@ -115,6 +116,39 @@ func TestWriter_ConcurrentMultiWriteGzip(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+
+	tester.Close()
+	if stub.(*drivers.Stub).Counter() != times+1 {
+		t.Fail()
+	}
+}
+
+func TestWriter_ConcurrentMultiWriteGzip(t *testing.T) {
+	stub := drivers.NewStub()
+	tester := NewWriter(&Config{
+		CompressionType: "gzip",
+		BufferTime:      time.Second,
+	}, func() drivers.Driver {
+		return stub
+	})
+	e := Event{
+		RawData: []byte(`{"test": "me"}`),
+		Enrichment: Enrichment{
+			Headers: map[string]string{`testH`: `testH`},
+		},
+	}
+	times := 1000
+	wg := sync.WaitGroup{}
+	wg.Add(times)
+	b, _ := jsoniter.ConfigFastest.Marshal(e)
+	b = append(b, []byte("\n")...)
+	for i := 0; i < times; i++ {
+		go func() {
+			defer wg.Done()
+			tester.Write(b)
+		}()
+	}
+	wg.Wait()
 	tester.Close()
 	time.Sleep(time.Second)
 	r, err := gzip.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
@@ -132,8 +166,8 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 	stub := drivers.NewStub()
 
 	tester := NewWriter(&Config{
-		CompressionType: "gzip",
-		BufferTime:      time.Second / 2,
+		CompressionType: "none",
+		BufferTime:      time.Millisecond * 500,
 	}, func() drivers.Driver {
 		return stub
 	})
@@ -146,20 +180,21 @@ func TestWriter_ConcurrentMultiWriteFLUSH(t *testing.T) {
 	times := 1000
 	wg := sync.WaitGroup{}
 	wg.Add(times)
+	b, _ := jsoniter.ConfigFastest.Marshal(e)
+	b = append(b, []byte("\n")...)
 	for i := 0; i < times; i++ {
 		go func() {
 			defer wg.Done()
-			jsoniter.ConfigFastest.NewEncoder(tester).Encode(e)
+			time.Sleep(time.Millisecond * 500 * time.Duration(rand.Int31n(5)))
+			tester.Write(b)
 		}()
 	}
 	wg.Wait()
 	tester.Close()
 	time.Sleep(time.Second)
-
-	r, _ := gzip.NewReader(bytes.NewBuffer(stub.(*drivers.Stub).Data()))
-	data, _ := ioutil.ReadAll(r)
-	if len(strings.Split(string(data), "\n")) != times+1 {
-		fmt.Println(len(strings.Split(string(data), "\n")))
+	data := string(stub.(*drivers.Stub).Data())
+	if len(strings.Split(data, "\n")) != times+1 {
+		fmt.Println(len(strings.Split(data, "\n")))
 		t.Fail()
 	}
 }

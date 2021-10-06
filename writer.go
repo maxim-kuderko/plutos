@@ -11,8 +11,9 @@ type Writer struct {
 	newDriver   func() drivers.Driver
 	driver      drivers.Driver
 
-	mu sync.Mutex
-	wg sync.WaitGroup
+	mu   sync.Mutex
+	wg   sync.WaitGroup
+	done chan struct{}
 }
 
 type Config struct {
@@ -24,7 +25,7 @@ func NewWriter(cfg *Config, d func() drivers.Driver) *Writer {
 	selectedDriver := func() drivers.Driver {
 		return drivers.NewCompressor(cfg.CompressionType, d)
 	}
-	w := &Writer{driver: selectedDriver(), newDriver: selectedDriver}
+	w := &Writer{driver: selectedDriver(), newDriver: selectedDriver, done: make(chan struct{})}
 	go w.periodicFlush(cfg.BufferTime)
 	return w
 }
@@ -36,8 +37,14 @@ func (w *Writer) periodicFlush(t time.Duration) {
 		t = DEFAULT_MAX_TIME
 	}
 	ticker := time.NewTicker(t)
-	for range ticker.C {
-		w.flush()
+	for {
+		select {
+		case <-ticker.C:
+			w.flush()
+		case <-w.done:
+			ticker.Stop()
+			return
+		}
 	}
 }
 
@@ -68,11 +75,9 @@ func (w *Writer) Write(b []byte) (n int, err error) {
 }
 
 func (w *Writer) Close() error {
+	w.done <- struct{}{}
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	defer w.wg.Wait()
-	if w.currentSize == 0 {
-		return nil
-	}
 	return w.driver.Close()
 }

@@ -16,12 +16,12 @@ type compressor struct {
 	buff       *bufio.Writer
 }
 
-var bufioWriterPool = sync.Pool{New: func() interface{} { return bufio.NewWriterSize(io.Discard, 1<<8*5) }}
+var pool = sync.Pool{New: func() interface{} { return bufio.NewWriterSize(io.Discard, 1<<8*5) }}
 
 func NewCompressor(t string, w func() Driver) Driver {
 	orig := w()
 	ww := compressorFactory(t, orig)
-	buff := bufioWriterPool.Get().(*bufio.Writer)
+	buff := pool.Get().(*bufio.Writer)
 	buff.Reset(ww)
 	return &compressor{
 		origWriter: orig,
@@ -36,7 +36,7 @@ func (g *compressor) Write(b []byte) (int, error) {
 
 func (g *compressor) Close() error {
 	defer func() {
-		bufioWriterPool.Put(g.buff)
+		pool.Put(g.buff)
 	}()
 	if err := g.buff.Flush(); err != nil {
 		return err
